@@ -16,7 +16,7 @@ var scContent string
 
 var rootCmd = &cobra.Command{
 	Use:   "gxpc",
-	Short: "XPC analyzer",
+	Short: "XPC sniffer",
 	Run: func(cmd *cobra.Command, args []string) {
 		logger := NewLogger()
 
@@ -44,6 +44,12 @@ var rootCmd = &cobra.Command{
 			return
 		}
 
+		procName, err := cmd.Flags().GetString("name")
+		if err != nil {
+			logger.Errorf("%v", err)
+			return
+		}
+
 		mgr := frida.NewDeviceManager()
 		devices, err := mgr.EnumerateDevices()
 		if err != nil {
@@ -62,6 +68,8 @@ var rootCmd = &cobra.Command{
 		}
 
 		var dev *frida.Device
+		var session *frida.Session
+
 		for _, d := range devices {
 			if id != "" {
 				if d.ID() == id {
@@ -86,24 +94,71 @@ var rootCmd = &cobra.Command{
 			return
 		}
 		defer dev.Clean()
+		logger.Infof("Using device %s (%s)", dev.Name(), dev.ID())
 
-		if pid == -1 {
-			logger.Errorf("Cannot attach to process with PID => -1")
+		procPid := pid
+
+		if pid == -1 && procName != "" {
+			processes, err := dev.EnumerateProcesses(frida.ScopeMinimal)
+			if err != nil {
+				logger.Errorf("Error enumerating processes: %v", err)
+				return
+			}
+
+			for _, proc := range processes {
+				if proc.Name() == procName {
+					procPid = proc.PID()
+					break
+				}
+			}
+		}
+
+		file, err := cmd.Flags().GetString("file")
+		if err != nil {
+			logger.Errorf("%v", err)
 			return
 		}
 
-		session, err := dev.Attach(pid, nil)
-		if err != nil {
-			logger.Errorf("Error attaching: %v", err)
+		if procPid == -1 && file == "" {
+			logger.Errorf("You need to pass pid, name or file to spawn")
 			return
+		}
+
+		if procPid != -1 {
+			session, err = dev.Attach(procPid, nil)
+			if err != nil {
+				logger.Errorf("Error attaching: %v", err)
+				return
+			}
+		} else {
+			spawnedPID, err := dev.Spawn(file, nil)
+			if err != nil {
+				logger.Errorf("Error spawning %s: %v", file, err)
+				return
+			}
+			procPid = spawnedPID
+			session, err = dev.Attach(spawnedPID, nil)
+			if err != nil {
+				logger.Errorf("Error attaching: %v", err)
+				return
+			}
 		}
 		defer session.Clean()
-		logger.Infof("Attached to the process with PID => %d", pid)
+
+		if err := dev.Resume(procPid); err != nil {
+			logger.Errorf("Error resuming: %v", err)
+			return
+		}
+
+		logger.Infof("Attached to the process with PID => %d", procPid)
 
 		detached := make(chan struct{})
 
-		session.On("detached", func(reason frida.SessionDetachReason) {
-			logger.Errorf("Session detached: %s", reason.String())
+		session.On("detached", func(reason frida.SessionDetachReason, crash *frida.Crash) {
+			logger.Errorf("Session detached: %s: %v", reason.String(), crash)
+			if crash != nil {
+				logger.Errorf("Crash: %s %s", crash.Report(), crash.Summary())
+			}
 			detached <- struct{}{}
 		})
 
@@ -114,10 +169,21 @@ var rootCmd = &cobra.Command{
 		}
 		defer script.Clean()
 
+		blacklist, err := cmd.Flags().GetStringSlice("blacklist")
+		if err != nil {
+			logger.Errorf("%v", err)
+			return
+		}
+
 		script.On("message", func(message string) {
 			msg, _ := frida.ScriptMessageToMessage(message)
-			if msg.Type == frida.MessageTypeSend {
-				logger.Scriptf("%v", msg.Payload)
+			switch msg.Type {
+			case frida.MessageTypeSend:
+				PrintData(msg.Payload, false, false, blacklist, logger)
+			case frida.MessageTypeLog:
+				logger.Infof("SCRIPT: %v", msg)
+			default:
+				logger.Errorf("SCRIPT: %v", msg)
 			}
 		})
 
@@ -151,9 +217,17 @@ var rootCmd = &cobra.Command{
 }
 
 func main() {
-	rootCmd.Flags().BoolP("list", "l", false, "list available devices")
 	rootCmd.Flags().StringP("id", "i", "", "connect to device with ID")
 	rootCmd.Flags().StringP("remote", "r", "", "connect to device at IP address")
+	rootCmd.Flags().StringP("name", "n", "", "process name")
+	rootCmd.Flags().StringP("file", "f", "", "spawn the file")
+
+	rootCmd.Flags().StringSliceP("blacklist", "b", []string{}, "blacklist the following connections")
+
+	rootCmd.Flags().BoolP("list", "l", false, "list available devices")
+	rootCmd.Flags().BoolP("decode", "d", true, "try to decode(bplist00 or bplist15), otherwise print base64 of bytes")
+	rootCmd.Flags().BoolP("hex", "x", false, "print hex of raw data")
+
 	rootCmd.Flags().IntP("pid", "p", -1, "PID of wanted process")
 
 	rootCmd.Execute()
