@@ -30,6 +30,8 @@ Flags:
 
 ![Running gxpc](running.png)
 
+![Running against Signal](running_one.png)
+
 If you do not pass `-i` flag, by default it will use USB device.
 
 Also, if `-d` flag is set up it will try to parse `plists` like `bplist00` and `bplist15`, otherwise just base64 representation 
