@@ -21,15 +21,9 @@ func PrintData(value any, decode, printHex bool, blacklist []string, logger *Log
 		logger.Scriptf("Name: %s", data["name"])
 		logger.Scriptf("Connection Name: %s", data["connName"])
 		logger.Scriptf("Dictionary:")
-		content, ok := data["dictionary"].(map[string]any)
-		if ok {
-			for k, v := range content {
-				var message string
-				printData(reflect.ValueOf(v), k, "\t", &message)
-				logger.Scriptf("%s", message)
-				//logger.Scriptf("\t%v => %v", k, v)
-			}
-		}
+		var message string
+		printData(reflect.ValueOf(data["dictionary"]), "", "", &message)
+		logger.Scriptf("%s", message)
 		fmt.Printf("==========================================================\n\n")
 	}
 }
@@ -41,7 +35,11 @@ func printData(v reflect.Value, key, indent string, message *string) {
 
 	switch v.Kind() {
 	case reflect.Map:
-		*message += fmt.Sprintf("%s%s => \n", indent, key)
+		if key != "" {
+			*message += fmt.Sprintf("%s%s => \n", indent, key)
+		} else {
+			*message += fmt.Sprintf("")
+		}
 		for _, k := range v.MapKeys() {
 			printData(v.MapIndex(k), k.Interface().(string), indent+"\t", message)
 		}
@@ -50,7 +48,11 @@ func printData(v reflect.Value, key, indent string, message *string) {
 			printData(v.Index(i), key, indent+"\t", message)
 		}
 	default:
-		*message += fmt.Sprintf("%s%s => %v\n", indent, key, v.Interface())
+		if key != "" {
+			*message += fmt.Sprintf("%s%s => %v\n", indent, key, v.Interface())
+		} else {
+			*message += fmt.Sprintf("%s => %v\n", indent, v.Interface())
+		}
 	}
 }
 

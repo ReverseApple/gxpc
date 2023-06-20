@@ -22,7 +22,6 @@ var xpc_type_get_name = getFunc("xpc_type_get_name", "pointer", ["pointer"]);
 var xpc_dictionary_get_value = getFunc("xpc_dictionary_get_value", "pointer", ["pointer", "pointer"]);
 var xpc_dictionary_get_data = getFunc("xpc_dictionary_get_data", "pointer", ["pointer", "pointer", "pointer"]);
 var xpc_string_get_string_ptr = getFunc("xpc_string_get_string_ptr", "pointer", ["pointer"]);
-var xpc_data_get_bytes = getFunc("xpc_data_get_bytes", "int", ["pointer", "pointer", "int", "int"]);
 var xpc_copy_description = getFunc("xpc_copy_description", "pointer", ["pointer"]);
 var xpc_get_type = getFunc("xpc_get_type", "pointer", ["pointer"]);
 var xpc_type_get_name = getFunc("xpc_type_get_name", "pointer", ["pointer"]);
@@ -32,6 +31,12 @@ var xpc_int64_get_value = getFunc("xpc_int64_get_value", "int", ["pointer"]);
 var xpc_double_get_value = getFunc("xpc_double_get_value", "double", ["pointer"]);
 var xpc_bool_get_value = getFunc("xpc_bool_get_value", "bool", ["pointer"]);
 var xpc_uuid_get_bytes = getFunc("xpc_uuid_get_bytes", "pointer", ["pointer"]);
+
+var xpc_array_get_count = getFunc("xpc_array_get_count", "int", ["pointer"]);
+var xpc_array_get_value = getFunc("xpc_array_get_value", "pointer", ["pointer", "int"]);
+
+var xpc_data_get_length = getFunc("xpc_data_get_length", "int", ["pointer"]);
+var xpc_data_get_bytes = getFunc("xpc_data_get_bytes", "int", ["pointer", "pointer", "int", "int"]);
 
 // dictionary functions
 var xpc_dictionary_set_string = Module.findExportByName(null, "xpc_dictionary_set_string");
@@ -57,31 +62,23 @@ function getXPCString(val) {
     return rcstr(content)
 }
 
-function getXPCData(conn, dict, val, key) {
-    var ll = Memory.alloc(Process.pointerSize);
-    xpc_dictionary_get_data(dict, key, ll);
-    var buff = Memory.alloc(Process.pointerSize * Memory.readInt(ll));
-    var n = xpc_data_get_bytes(val, buff, 0, Memory.readInt(ll));
-    if (n != Memory.readInt(ll)) {
-        return null;
+function getXPCData(conn, dict, buff, n) {
+    const hdr = buff.readCString(8);
+    if (hdr == "bplist15") {
+        const plist = plist15Create(buff, n, ptr("0x0"));
+        return ObjC.Object(plist).description().toString();
+    } else if (hdr == "bplist17") {
+        return parseBPList17(conn, dict);
+    } else if (hdr == "bplist00") {
+        const format = Memory.alloc(8);
+        format.writeU64(0xaaaaaaaa);
+        var ObjCData = ObjC.classes.NSData.dataWithBytes_length_(buff, n);
+        const plist = ObjC.classes.NSPropertyListSerialization.propertyListWithData_options_format_error_(ObjCData, 0, format, ptr(0x0));
+        return ObjC.Object(plist).description().toString();
     } else {
-        const hdr = buff.readCString(8);
-        if (hdr == "bplist15") {
-            const plist = plist15Create(buff, n, ptr("0x0"));
-            return ObjC.Object(plist).description().toString();
-        } else if (hdr == "bplist17") {
-            return parseBPList17(conn, dict);
-        } else if (hdr == "bplist00") {
-            const format = Memory.alloc(8);
-            format.writeU64(0xaaaaaaaa);
-            var ObjCData = ObjC.classes.NSData.dataWithBytes_length_(buff, n);
-            const plist = ObjC.classes.NSPropertyListSerialization.propertyListWithData_options_format_error_(ObjCData, 0, format, ptr(0x0));
-            return ObjC.Object(plist).description().toString();
-        } else {
-            var ObjCData = ObjC.classes.NSData.dataWithBytes_length_(buff, n);
-            var base64Encoded = ObjCData.base64EncodedStringWithOptions_(0).toString();
-            return base64Encoded;
-        }
+        var ObjCData = ObjC.classes.NSData.dataWithBytes_length_(buff, n);
+        var base64Encoded = ObjCData.base64EncodedStringWithOptions_(0).toString();
+        return base64Encoded;
     }
 }
 
@@ -112,51 +109,48 @@ function parseBPList17(conn, dict) {
     return decoder.debugDescription().toString();
 }
 
-function extract(conn, xpc_object, ret) {
+function extract(conn, xpc_object, dict) {
+    var ret = null;
     var xpc_object_type = getValueTypeName(xpc_object);
     switch (xpc_object_type) {
         case "dictionary":
+            ret = {};
+            dict = xpc_object;
             var keys = getKeys(rcstr(xpc_copy_description(xpc_object)));
             for (var i in keys) {
-                var type = getValueTypeName(xpc_dictionary_get_value(xpc_object, cstr(keys[i])));
-                var val = xpc_dictionary_get_value(xpc_object, cstr(keys[i]));
-                switch (type) {
-                    case "string":
-                        ret[keys[i]] = getXPCString(val);
-                        break;
-                    case "data":
-                        var key = cstr(keys[i]);
-                        ret[keys[i]] = getXPCData(conn, xpc_object, val, key);
-                        break;
-                    case "uint64":
-                        ret[keys[i]] = xpc_uint64_get_value(val);
-                        break;
-                    case "int64":
-                        ret[keys[i]] = xpc_int64_get_value(val);
-                        break;
-                    case "dictionary":
-                        var out = {};
-                        extract(conn, val, out);
-                        ret[keys[i]] = out;
-                        break;
-                    case "double":
-                        ret[keys[i]] = xpc_double_get_value(val);
-                        break;
-                    case "bool":
-                        ret[keys[i]] = xpc_bool_get_value(val);
-                        break;
-                    case "uuid":
-                        ret[keys[i]] = xpc_uuid_get_bytes(val);
-                        break;
-                    default:
-                        ret[keys[i]] = "not known yet for" + type;
-                }
+                var val = xpc_dictionary_get_value(dict, cstr(keys[i]));
+                ret[keys[i]] = extract(conn, val, dict);
             }
-            break;
+            return ret;
+        case "bool":
+            return xpc_bool_get_value(xpc_object);
+        case "uuid":
+            return xpc_uuid_get_bytes(xpc_object);
+        case "double":
+            return xpc_double_get_value(xpc_object);
+        case "string":
+            return getXPCString(xpc_object);
+        case "data":
+            var dataLen = xpc_data_get_length(xpc_object);
+            var buff = Memory.alloc(Process.pointerSize * dataLen);
+            var n = xpc_data_get_bytes(xpc_object, buff, 0, dataLen);
+            return getXPCData(conn, dict, buff, n);
+        case "uint64":
+            return xpc_uint64_get_value(xpc_object);
+        case "int64":
+            return xpc_int64_get_value(xpc_object);
+        case "array":
+            ret = [];
+            var count = xpc_array_get_count(xpc_object);
+            for (var j = 0; j < count; j++) {
+                var elem = xpc_array_get_value(xpc_object, j);
+                var el = extract(conn, elem);
+                ret.push(el);
+            }
+            return ret;
         default:
-            return;
+            return {};
     }
-    return ret;
 }
 
 function parseAndSendDictData(fnName, conn, dict) {
@@ -168,9 +162,8 @@ function parseAndSendDictData(fnName, conn, dict) {
     } else {
         ret["connName"] = rcstr(connName);
     }
-    var dictData = {};
-    extract(conn, dict, dictData);
-    ret["dictionary"] = dictData;
+    extract(conn, dict);
+    ret["dictionary"] = extract(conn, dict, dict);
     send(JSON.stringify(ret));
     //send(JSON.stringify(extract(dict)));
 }
