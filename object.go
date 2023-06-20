@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 )
 
 func PrintData(value any, decode, printHex bool, blacklist []string, logger *Logger) {
@@ -44,9 +45,13 @@ func printData(v reflect.Value, key, indent string, message *string) {
 			printData(v.MapIndex(k), k.Interface().(string), indent+"\t", message)
 		}
 	case reflect.Array, reflect.Slice:
+		*message += fmt.Sprintf("%s%s => [\n", indent, key)
+		*message += indent + "[\n"
 		for i := 0; i < v.Len(); i++ {
-			printData(v.Index(i), key, indent+"\t", message)
+			keyNum := strconv.Itoa(i)
+			printData(v.Index(i), keyNum, indent+"\t", message)
 		}
+		*message += indent + "]\n"
 	default:
 		if key != "" {
 			*message += fmt.Sprintf("%s%s => %v\n", indent, key, v.Interface())

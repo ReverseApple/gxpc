@@ -132,9 +132,14 @@ function extract(conn, xpc_object, dict) {
             return getXPCString(xpc_object);
         case "data":
             var dataLen = xpc_data_get_length(xpc_object);
-            var buff = Memory.alloc(Process.pointerSize * dataLen);
-            var n = xpc_data_get_bytes(xpc_object, buff, 0, dataLen);
-            return getXPCData(conn, dict, buff, n);
+            if (dataLen > 0) {
+                var buff = Memory.alloc(Process.pointerSize * dataLen);
+                var n = xpc_data_get_bytes(xpc_object, buff, 0, dataLen);
+                return getXPCData(conn, dict, buff, n);
+            } else {
+                const encoder = new TextEncoder();
+                return encoder.encode("");
+            }
         case "uint64":
             return xpc_uint64_get_value(xpc_object);
         case "int64":
