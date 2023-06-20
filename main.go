@@ -225,8 +225,8 @@ func main() {
 	rootCmd.Flags().StringSliceP("blacklist", "b", []string{}, "blacklist the following connections")
 
 	rootCmd.Flags().BoolP("list", "l", false, "list available devices")
-	rootCmd.Flags().BoolP("decode", "d", true, "try to decode(bplist00 or bplist15), otherwise print base64 of bytes")
-	rootCmd.Flags().BoolP("hex", "x", false, "print hex of raw data")
+	//rootCmd.Flags().BoolP("decode", "d", true, "try to decode(bplist00 or bplist15), otherwise print base64 of bytes")
+	//rootCmd.Flags().BoolP("hex", "x", false, "print hex of raw data")
 
 	rootCmd.Flags().IntP("pid", "p", -1, "PID of wanted process")
 
