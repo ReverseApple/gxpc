@@ -1,11 +1,13 @@
 # gxpc
 
-Alternative to [xpcspy](#) tool which basically uses the same technique except this one is written using 
-Go and also uses [frida-go](https://github.com/frida/frida-go) bindings.
+Alternative to [xpcspy](https://github.com/hot3eed/xpcspy) tool which basically uses the same technique except this one is written using 
+Go using [frida-go](https://github.com/frida/frida-go) bindings.
+
+Additionally, it recursively parses types of `xpc_object_t` as well as unmarshalling the data back to Go types.
 
 # Installation
 
-* Follow the instructions documented [here](https://github.com/frida/frida-go)
+* Follow the instructions for devkit documented [here](https://github.com/frida/frida-go)
 * Run `go install github.com/nsecho/gxpc@latest`
 
 # Usage
@@ -33,7 +35,3 @@ Flags:
 ![Running against Signal](running_one.png)
 
 If you do not pass `-i` flag, by default it will use USB device.
-
-Also, if `-d` flag is set up it will try to parse `plists` like `bplist00` and `bplist15`, otherwise just base64 representation 
-of raw bytes will be returned. You can also use `-x` flag to get hexadecimal representation of raw bytes. Strings will be shown as strings 
-without any encoding.
