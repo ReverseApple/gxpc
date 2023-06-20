@@ -10,17 +10,26 @@ function getValueTypeName(val) {
     return Memory.readCString(name);
 }
 
+
+// Intercept these functions
 var xpc_connection_send_notification = Module.findExportByName(null, "xpc_connection_send_notification");
 var xpc_connection_send_message = Module.findExportByName(null, "xpc_connection_send_message");
 var xpc_connection_send_message_with_reply = Module.findExportByName(null, "xpc_connection_send_message_with_reply");
 var xpc_connection_send_message_with_reply_sync = Module.findExportByName(null, "xpc_connection_send_message_with_reply_sync");
 var xpc_connection_create_mach_service = Module.findExportByName(null, "xpc_connection_create_mach_service");
 
+var __CFBinaryPlistCreate15 = DebugSymbol.fromName('__CFBinaryPlistCreate15').address;
+var _xpc_connection_call_event_handler = DebugSymbol.fromName("_xpc_connection_call_event_handler").address;
+var CFBinaryPlistCreate15 = new NativeFunction(__CFBinaryPlistCreate15, "pointer", ["pointer", "int", "pointer"]);
+var xpc_connection_call_event_handler = new NativeFunction(_xpc_connection_call_event_handler, "void", ["pointer", "pointer"]);
+
+var xpc_dictionary_set_string = Module.findExportByName(null, "xpc_dictionary_set_string");
+
+// Use these functions to make sense out of xpc_object_t and xpc_connection_t
 var xpc_connection_get_name = getFunc("xpc_connection_get_name", "pointer", ["pointer"]);
 var xpc_get_type = getFunc("xpc_get_type", "pointer", ["pointer"]);
 var xpc_type_get_name = getFunc("xpc_type_get_name", "pointer", ["pointer"]);
 var xpc_dictionary_get_value = getFunc("xpc_dictionary_get_value", "pointer", ["pointer", "pointer"]);
-var xpc_dictionary_get_data = getFunc("xpc_dictionary_get_data", "pointer", ["pointer", "pointer", "pointer"]);
 var xpc_string_get_string_ptr = getFunc("xpc_string_get_string_ptr", "pointer", ["pointer"]);
 var xpc_copy_description = getFunc("xpc_copy_description", "pointer", ["pointer"]);
 var xpc_get_type = getFunc("xpc_get_type", "pointer", ["pointer"]);
@@ -38,13 +47,6 @@ var xpc_array_get_value = getFunc("xpc_array_get_value", "pointer", ["pointer", 
 var xpc_data_get_length = getFunc("xpc_data_get_length", "int", ["pointer"]);
 var xpc_data_get_bytes = getFunc("xpc_data_get_bytes", "int", ["pointer", "pointer", "int", "int"]);
 
-// dictionary functions
-var xpc_dictionary_set_string = Module.findExportByName(null, "xpc_dictionary_set_string");
-
-const p___CFBinaryPlistCreate15 = DebugSymbol.fromName('__CFBinaryPlistCreate15').address;
-const p__xpc_Connection_call_event_handler = DebugSymbol.fromName("_xpc_connection_call_event_handler").address;
-let call_event_handler = new NativeFunction(p__xpc_Connection_call_event_handler, "void", ["pointer", "pointer"]);
-let plist15Create = new NativeFunction(p___CFBinaryPlistCreate15, "pointer", ["pointer", "int", "pointer"]);
 
 // create C string from JavaScript string
 function cstr(str) {
@@ -65,7 +67,7 @@ function getXPCString(val) {
 function getXPCData(conn, dict, buff, n) {
     const hdr = buff.readCString(8);
     if (hdr == "bplist15") {
-        const plist = plist15Create(buff, n, ptr("0x0"));
+        const plist = CFBinaryPlistCreate15(buff, n, ptr("0x0"));
         return ObjC.Object(plist).description().toString();
     } else if (hdr == "bplist17") {
         return parseBPList17(conn, dict);
@@ -178,7 +180,7 @@ var interceptors = {
     "xpc_connection_send_message": xpc_connection_send_message,
     "xpc_connection_send_message_with_reply": xpc_connection_send_message_with_reply,
     "xpc_connection_send_message_with_reply_sync": xpc_connection_send_message_with_reply_sync,
-    "xpc_connection_call_event_handler": call_event_handler
+    "xpc_connection_call_event_handler": xpc_connection_call_event_handler
 }
 
 for (var name in interceptors) {
