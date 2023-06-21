@@ -1,16 +1,3 @@
-// helper function that will create new NativeFunction
-function getFunc(name, ret_type, args) {
-    return new NativeFunction(Module.findExportByName(null, name), ret_type, args);
-}
-
-// get value type name from xpc_object_t
-function getValueTypeName(val) {
-    var valueType = xpc_get_type(val);
-    var name = xpc_type_get_name(valueType);
-    return Memory.readCString(name);
-}
-
-
 // Intercept these functions
 var xpc_connection_send_notification = Module.findExportByName(null, "xpc_connection_send_notification");
 var xpc_connection_send_message = Module.findExportByName(null, "xpc_connection_send_message");
@@ -32,8 +19,6 @@ var xpc_type_get_name = getFunc("xpc_type_get_name", "pointer", ["pointer"]);
 var xpc_dictionary_get_value = getFunc("xpc_dictionary_get_value", "pointer", ["pointer", "pointer"]);
 var xpc_string_get_string_ptr = getFunc("xpc_string_get_string_ptr", "pointer", ["pointer"]);
 var xpc_copy_description = getFunc("xpc_copy_description", "pointer", ["pointer"]);
-var xpc_get_type = getFunc("xpc_get_type", "pointer", ["pointer"]);
-var xpc_type_get_name = getFunc("xpc_type_get_name", "pointer", ["pointer"]);
 
 var xpc_uint64_get_value = getFunc("xpc_uint64_get_value", "int", ["pointer"]);
 var xpc_int64_get_value = getFunc("xpc_int64_get_value", "int", ["pointer"]);
@@ -47,6 +32,17 @@ var xpc_array_get_value = getFunc("xpc_array_get_value", "pointer", ["pointer", 
 var xpc_data_get_length = getFunc("xpc_data_get_length", "int", ["pointer"]);
 var xpc_data_get_bytes = getFunc("xpc_data_get_bytes", "int", ["pointer", "pointer", "int", "int"]);
 
+// helper function that will create new NativeFunction
+function getFunc(name, ret_type, args) {
+    return new NativeFunction(Module.findExportByName(null, name), ret_type, args);
+}
+
+// get value type name from xpc_object_t
+function getValueTypeName(val) {
+    var valueType = xpc_get_type(val);
+    var name = xpc_type_get_name(valueType);
+    return Memory.readCString(name);
+}
 
 // create C string from JavaScript string
 function cstr(str) {
@@ -139,8 +135,8 @@ function extract(conn, xpc_object, dict) {
                 var n = xpc_data_get_bytes(xpc_object, buff, 0, dataLen);
                 return getXPCData(conn, dict, buff, n);
             } else {
-                const encoder = new TextEncoder();
-                return encoder.encode("");
+                var empty = new Uint8Array();
+                return empty;
             }
         case "uint64":
             return xpc_uint64_get_value(xpc_object);
@@ -172,7 +168,6 @@ function parseAndSendDictData(fnName, conn, dict) {
     extract(conn, dict);
     ret["dictionary"] = extract(conn, dict, dict);
     send(JSON.stringify(ret));
-    //send(JSON.stringify(extract(dict)));
 }
 
 var interceptors = {
@@ -183,15 +178,35 @@ var interceptors = {
     "xpc_connection_call_event_handler": xpc_connection_call_event_handler
 }
 
-for (var name in interceptors) {
-    Interceptor.attach(interceptors[name], {
-        onEnter(args) {
-            var conn = args[0];
-            var dict = args[1];
-            parseAndSendDictData(name, conn, dict);
-        }
-    });
-}
+Interceptor.attach(xpc_connection_send_notification, {
+    onEnter(args) {
+        parseAndSendDictData("xpc_connection_send_notification", args[0], args[1]);
+    }
+});
+
+Interceptor.attach(xpc_connection_send_message, {
+    onEnter(args) {
+        parseAndSendDictData("xpc_connection_send_message", args[0], args[1]);
+    }
+});
+
+Interceptor.attach(xpc_connection_send_message_with_reply, {
+    onEnter(args) {
+        parseAndSendDictData("xpc_connection_send_message_with_reply", args[0], args[1]);
+    }
+})
+
+Interceptor.attach(xpc_connection_send_message_with_reply_sync, {
+    onEnter(args) {
+        parseAndSendDictData("xpc_connection_send_message_with_reply_sync", args[0], args[1]);
+    }
+})
+
+Interceptor.attach(xpc_connection_call_event_handler, {
+    onEnter(args) {
+        parseAndSendDictData("xpc_connection_call_event_handler", args[0], args[1]);
+    }
+});
 
 Interceptor.attach(xpc_connection_create_mach_service, {
     onEnter(args) {
