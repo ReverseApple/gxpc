@@ -21,7 +21,7 @@ func PrintData(value any, decode, printHex bool, blacklist []string, logger *Log
 	if !connectionNameInBlacklist(name, blacklist) {
 		logger.Scriptf("Name: %s", data["name"])
 		logger.Scriptf("Connection Name: %s", data["connName"])
-		logger.Scriptf("Dictionary:")
+		logger.Scriptf("Data:")
 		var message string
 		printData(reflect.ValueOf(data["dictionary"]), "", "", &message)
 		logger.Scriptf("%s", message)
