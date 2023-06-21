@@ -1,9 +1,8 @@
 # gxpc
 
-Alternative to [xpcspy](https://github.com/hot3eed/xpcspy) tool which basically uses the same technique except this one is written using 
-Go using [frida-go](https://github.com/frida/frida-go) bindings.
+Tool inspired by [xpcspy](https://github.com/hot3eed/xpcspy) tool to monitor XPC traffic. 
 
-Additionally, it recursively parses types of `xpc_object_t` as well as unmarshalling the data back to Go types.
+gxpc recursively parses types of `xpc_object_t` as well as unmarshalling the data back to Go types.
 
 # Installation
 
