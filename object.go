@@ -20,13 +20,28 @@ func PrintData(value any, decode, printHex bool, blacklist []string, logger *Log
 	}
 	name := data["connName"].(string)
 	if !connectionNameInBlacklist(name, blacklist) {
+		var message string
+		fnName := fmt.Sprintf("Name: %s\n", data["name"])
+		connName := fmt.Sprintf("Connection Name: %s\n", data["connName"])
+		printData(reflect.ValueOf(data["dictionary"]), "", "", &message)
+		total := len(fnName) + len(connName) + len(message) + 100
+
+		builder := strings.Builder{}
+		builder.Grow(total)
+
+		builder.WriteString(fnName)
+		builder.WriteString(connName)
+		builder.WriteString("Data:\n")
+		builder.WriteString(message)
+		builder.WriteString(fmt.Sprintf("\n%s\n", strings.Repeat("=", 80)))
+
 		logger.Scriptf("Name: %s", data["name"])
 		logger.Scriptf("Connection Name: %s", data["connName"])
 		logger.Scriptf("Data:")
-		var message string
-		printData(reflect.ValueOf(data["dictionary"]), "", "", &message)
 		logger.Scriptf("%s", message)
 		fmt.Println(strings.Repeat("=", 80))
+
+		logger.writeToFileScript(builder.String())
 	}
 }
 

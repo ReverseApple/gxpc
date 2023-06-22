@@ -50,6 +50,19 @@ var rootCmd = &cobra.Command{
 			return
 		}
 
+		output, err := cmd.Flags().GetString("output")
+		if err != nil {
+			logger.Errorf("%v", err)
+			return
+		}
+
+		if err := logger.SetOutput(output); err != nil {
+			logger.Errorf("%v", err)
+			return
+		}
+
+		defer logger.Close()
+
 		mgr := frida.NewDeviceManager()
 		devices, err := mgr.EnumerateDevices()
 		if err != nil {
@@ -228,6 +241,7 @@ func main() {
 	rootCmd.Flags().StringP("remote", "r", "", "connect to device at IP address")
 	rootCmd.Flags().StringP("name", "n", "", "process name")
 	rootCmd.Flags().StringP("file", "f", "", "spawn the file")
+	rootCmd.Flags().StringP("output", "o", "", "save output to this file")
 
 	rootCmd.Flags().StringSliceP("blacklist", "b", []string{}, "blacklist the following connections")
 
