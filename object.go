@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 func PrintData(value any, decode, printHex bool, blacklist []string, logger *Logger) {
@@ -25,7 +26,7 @@ func PrintData(value any, decode, printHex bool, blacklist []string, logger *Log
 		var message string
 		printData(reflect.ValueOf(data["dictionary"]), "", "", &message)
 		logger.Scriptf("%s", message)
-		fmt.Printf("==========================================================\n\n")
+		fmt.Println(strings.Repeat("=", 80))
 	}
 }
 
