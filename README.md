@@ -19,14 +19,14 @@ Usage:
   gxpc [flags]
 
 Flags:
-  -d, --decode          try to decode(bplist00 or bplist15), otherwise print base64 of bytes (default true)
-  -h, --help            help for gxpc
-  -x, --hex             print hex of raw data
-  -i, --id string       connect to device with ID
-  -l, --list            list available devices
-  -n, --name string     process name
-  -p, --pid int         PID of wanted process (default -1)
-  -r, --remote string   connect to device at IP address
+  -b, --blacklist strings   blacklist the following connections
+  -f, --file string         spawn the file
+  -h, --help                help for gxpc
+  -i, --id string           connect to device with ID
+  -l, --list                list available devices
+  -n, --name string         process name
+  -p, --pid int             PID of wanted process (default -1)
+  -r, --remote string       connect to device at IP address
 ```
 
 ![Running gxpc](running.png)
