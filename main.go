@@ -124,6 +124,8 @@ var rootCmd = &cobra.Command{
 			return
 		}
 
+		spawned := false
+
 		if procPid != -1 {
 			session, err = dev.Attach(procPid, nil)
 			if err != nil {
@@ -142,13 +144,9 @@ var rootCmd = &cobra.Command{
 				logger.Errorf("Error attaching: %v", err)
 				return
 			}
+			spawned = true
 		}
 		defer session.Clean()
-
-		if err := dev.Resume(procPid); err != nil {
-			logger.Errorf("Error resuming: %v", err)
-			return
-		}
 
 		logger.Infof("Attached to the process with PID => %d", procPid)
 
@@ -192,6 +190,15 @@ var rootCmd = &cobra.Command{
 			return
 		}
 		logger.Infof("Loaded script to the process")
+
+		if spawned {
+			if err := dev.Resume(procPid); err != nil {
+				logger.Errorf("Error resuming: %v", err)
+				return
+			} else {
+				logger.Infof("Resumed process")
+			}
+		}
 
 		c := make(chan os.Signal)
 		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
