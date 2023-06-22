@@ -4,6 +4,7 @@ var xpc_connection_send_message = Module.findExportByName(null, "xpc_connection_
 var xpc_connection_send_message_with_reply = Module.findExportByName(null, "xpc_connection_send_message_with_reply");
 var xpc_connection_send_message_with_reply_sync = Module.findExportByName(null, "xpc_connection_send_message_with_reply_sync");
 var xpc_connection_create_mach_service = Module.findExportByName(null, "xpc_connection_create_mach_service");
+var xpc_connection_set_event_handler = Module.findExportByName(null, "xpc_connection_set_event_handler");
 
 var __CFBinaryPlistCreate15 = DebugSymbol.fromName('__CFBinaryPlistCreate15').address;
 var _xpc_connection_call_event_handler = DebugSymbol.fromName("_xpc_connection_call_event_handler").address;
@@ -66,7 +67,11 @@ function getXPCData(conn, dict, buff, n) {
         const plist = CFBinaryPlistCreate15(buff, n, ptr("0x0"));
         return ObjC.Object(plist).description().toString();
     } else if (hdr == "bplist17") {
-        return parseBPList17(conn, dict);
+        if (conn != null) {
+            return parseBPList17(conn, dict);
+        } else {
+            return "cannot parse blplist17 for xpc_handler_t";
+        }
     } else if (hdr == "bplist00") {
         const format = Memory.alloc(8);
         format.writeU64(0xaaaaaaaa);
@@ -159,23 +164,20 @@ function extract(conn, xpc_object, dict) {
 function parseAndSendDictData(fnName, conn, dict) {
     var ret = {};
     ret["name"] = fnName;
-    var connName = xpc_connection_get_name(conn);
-    if (connName == 0x0) {
-        ret["connName"] = "UNKNOWN"
-    } else {
-        ret["connName"] = rcstr(connName);
+    ret["connName"] = "UNKNOWN";
+    if (conn != null) {
+        var connName = xpc_connection_get_name(conn);
+        if (connName != 0x0) {
+            ret["connName"] = rcstr(connName);
+        }
     }
-    extract(conn, dict);
-    ret["dictionary"] = extract(conn, dict, dict);
+    if (fnName == "xpc_connection_set_event_handler") {
+        var data = {"blockImplementation": dict.toString()};
+        ret["dictionary"] = data;
+    } else {
+        ret["dictionary"] = extract(conn, dict, dict);
+    }
     send(JSON.stringify(ret));
-}
-
-var interceptors = {
-    "xpc_connection_send_notification": xpc_connection_send_notification,
-    "xpc_connection_send_message": xpc_connection_send_message,
-    "xpc_connection_send_message_with_reply": xpc_connection_send_message_with_reply,
-    "xpc_connection_send_message_with_reply_sync": xpc_connection_send_message_with_reply_sync,
-    "xpc_connection_call_event_handler": xpc_connection_call_event_handler
 }
 
 Interceptor.attach(xpc_connection_send_notification, {
@@ -207,6 +209,14 @@ Interceptor.attach(xpc_connection_call_event_handler, {
         parseAndSendDictData("xpc_connection_call_event_handler", args[0], args[1]);
     }
 });
+
+Interceptor.attach(xpc_connection_set_event_handler, {
+    onEnter(args) {
+        const implementationAddr = args[1].add(Process.pointerSize * 2);
+        const implementation = Memory.readPointer(implementationAddr);
+        parseAndSendDictData("xpc_connection_set_event_handler", args[0], implementation);
+    }
+})
 
 Interceptor.attach(xpc_connection_create_mach_service, {
     onEnter(args) {
