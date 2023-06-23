@@ -56,9 +56,11 @@ var rootCmd = &cobra.Command{
 			return
 		}
 
-		if err := logger.SetOutput(output); err != nil {
-			logger.Errorf("%v", err)
-			return
+		if output != "" {
+			if err := logger.SetOutput(output); err != nil {
+				logger.Errorf("%v", err)
+				return
+			}
 		}
 
 		defer logger.Close()
