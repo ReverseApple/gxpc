@@ -15,7 +15,7 @@ import (
 var scContent string
 
 var rootCmd = &cobra.Command{
-	Use:   "gxpc",
+	Use:   "gxpc [spawn_args]",
 	Short: "XPC sniffer",
 	Run: func(cmd *cobra.Command, args []string) {
 		logger := NewLogger()
@@ -148,7 +148,11 @@ var rootCmd = &cobra.Command{
 				return
 			}
 		} else {
-			spawnedPID, err := dev.Spawn(file, nil)
+			opts := frida.NewSpawnOptions()
+			argv := []string{file}
+			argv = append(argv, args...)
+			opts.SetArgv(argv)
+			spawnedPID, err := dev.Spawn(file, opts)
 			if err != nil {
 				logger.Errorf("Error spawning %s: %v", file, err)
 				return
