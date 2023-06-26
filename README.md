@@ -16,15 +16,16 @@ $ gxpc --help
 XPC sniffer
 
 Usage:
-  gxpc [flags]
+  gxpc [spawn_args] [flags]
 
 Flags:
-  -b, --blacklist strings   blacklist the following connections
+  -b, --blacklist strings   blacklist the following wildcard connections
   -f, --file string         spawn the file
   -h, --help                help for gxpc
   -i, --id string           connect to device with ID
   -l, --list                list available devices
   -n, --name string         process name
+  -o, --output string       save output to this file
   -p, --pid int             PID of wanted process (default -1)
   -r, --remote string       connect to device at IP address
 ```
@@ -32,5 +33,7 @@ Flags:
 ![Running gxpc](running.png)
 
 ![Running against Signal](running_one.png)
+
+![Getting airplane mode](airplane_mode.png)
 
 If you do not pass `-i` flag, by default it will use USB device.

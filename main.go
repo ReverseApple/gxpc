@@ -260,7 +260,7 @@ func main() {
 	rootCmd.Flags().StringP("file", "f", "", "spawn the file")
 	rootCmd.Flags().StringP("output", "o", "", "save output to this file")
 
-	rootCmd.Flags().StringSliceP("blacklist", "b", []string{}, "blacklist the following connections")
+	rootCmd.Flags().StringSliceP("blacklist", "b", []string{}, "blacklist the following wildcard connections")
 
 	rootCmd.Flags().BoolP("list", "l", false, "list available devices")
 	//rootCmd.Flags().BoolP("decode", "d", true, "try to decode(bplist00 or bplist15), otherwise print base64 of bytes")
