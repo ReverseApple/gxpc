@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"os"
 	"os/signal"
+	"regexp"
 	"strings"
 	"syscall"
 )
@@ -196,7 +197,7 @@ var rootCmd = &cobra.Command{
 			msg, _ := frida.ScriptMessageToMessage(message)
 			switch msg.Type {
 			case frida.MessageTypeSend:
-				PrintData(msg.Payload, false, false, blacklist, logger)
+				PrintData(msg.Payload, false, false, blacklistToRegex(blacklist), logger)
 			case frida.MessageTypeLog:
 				logger.Infof("SCRIPT: %v", msg)
 			default:
@@ -240,6 +241,16 @@ var rootCmd = &cobra.Command{
 			logger.Infof("Script unloaded")
 		}
 	},
+}
+
+func blacklistToRegex(bl []string) []*regexp.Regexp {
+	rex := make([]*regexp.Regexp, len(bl))
+	for i, b := range bl {
+		replaced := strings.ReplaceAll(b, "*", ".*")
+		r := regexp.MustCompile(replaced)
+		rex[i] = r
+	}
+	return rex
 }
 
 func main() {

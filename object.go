@@ -3,11 +3,12 @@ package main
 import (
 	"fmt"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 )
 
-func PrintData(value any, decode, printHex bool, blacklist []string, logger *Logger) {
+func PrintData(value any, decode, printHex bool, blacklist []*regexp.Regexp, logger *Logger) {
 	val := reflect.ValueOf(value)
 
 	data := make(map[string]any)
@@ -77,9 +78,9 @@ func printData(v reflect.Value, key, indent string, message *string) {
 	}
 }
 
-func connectionNameInBlacklist(connName string, blacklist []string) bool {
+func connectionNameInBlacklist(connName string, blacklist []*regexp.Regexp) bool {
 	for _, b := range blacklist {
-		if connName == b {
+		if match := b.MatchString(connName); match {
 			return true
 		}
 	}
