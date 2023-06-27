@@ -1,0 +1,49 @@
+name: Release
+on:
+  push:
+    tags:
+      - v*.*.*
+
+jobs:
+  release:
+    strategy:
+      matrix:
+        frida_version: ["16.1.0"]
+    runs-on: macos-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      -
+        name: Set up Go
+        uses: actions/setup-go@v4
+      -
+        name: Fetch all tags
+        run: git fetch --force --tags
+      -
+        name: Download Frida macOS_amd64
+        uses: ./.github/actions/install-frida-devkit
+        with:
+          arch: x86_64
+          os: macos
+          version: ${{ matrix.frida_version }}
+          outdir: /tmp/data/macos_amd64
+      -
+        name: Download Frida macOS_arm64
+        uses: ./.github/actions/install-frida-devkit
+        with:
+          arch: arm64
+          os: macos
+          version: ${{ matrix.frida_version }}
+          outdir: /tmp/data/macos_arm64
+      -
+        name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v4
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
