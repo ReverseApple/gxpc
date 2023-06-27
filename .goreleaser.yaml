@@ -1,0 +1,40 @@
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - id: darwin_amd64
+    binary: gxpc
+    env:
+      - CGO_ENABLED=1
+      - CGO_LDFLAGS=-L/tmp/data/macos_amd64/lib
+      - CGO_CFLAGS=-I/tmp/data/macos_amd64/include
+    goos:
+      - darwin
+    goarch:
+      - amd64
+    flags:
+      - -trimpath
+    ldflags: -s -w
+  - id: darwin_arm64
+    binary: gxpc
+    env:
+      - CGO_ENABLED=1
+      - CGO_LDFLAGS=-L/tmp/data/macos_arm64/lib
+      - CGO_CFLAGS=-I/tmp/data/macos_arm64/include
+    goos:
+      - darwin
+    goarch:
+      - arm64
+    flags:
+      - -trimpath
+    ldflags: -s -w
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
