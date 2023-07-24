@@ -150,8 +150,11 @@ var rootCmd = &cobra.Command{
 			}
 		} else {
 			opts := frida.NewSpawnOptions()
-			argv := []string{file}
-			argv = append(argv, args...)
+			argv := make([]string, len(args)+1)
+			argv[0] = file
+			for i, arg := range args {
+				argv[i+1] = arg
+			}
 			opts.SetArgv(argv)
 			spawnedPID, err := dev.Spawn(file, opts)
 			if err != nil {
@@ -264,7 +267,7 @@ func main() {
 
 	rootCmd.Flags().BoolP("list", "l", false, "list available devices")
 	//rootCmd.Flags().BoolP("decode", "d", true, "try to decode(bplist00 or bplist15), otherwise print base64 of bytes")
-	//rootCmd.Flags().BoolP("hex", "x", false, "print hex of raw data")
+	//rootCmd.Flags().BoolP("hex", "x", false, "print hexdump of raw data")
 
 	rootCmd.Flags().IntP("pid", "p", -1, "PID of wanted process")
 

@@ -40,3 +40,6 @@ Flags:
 ![Getting airplane mode](airplane_mode.png)
 
 If you do not pass `-i` flag, by default it will use USB device.
+
+If you want to spawn a file/binary, pass the `-f` that points to the file/binary you want to spawn along with the arguments. 
+For example to run `/bin/cat` with `/tmp/somefile`, use `gxpc -i local -f /bin/cat /tmp/somefile`.
