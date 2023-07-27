@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"regexp"
+	"runtime/pprof"
 	"strings"
 	"syscall"
 )
@@ -19,6 +20,10 @@ var rootCmd = &cobra.Command{
 	Use:   "gxpc [spawn_args]",
 	Short: "XPC sniffer",
 	Run: func(cmd *cobra.Command, args []string) {
+		out, _ := os.Create("out.pprof")
+		pprof.StartCPUProfile(out)
+		defer pprof.StopCPUProfile()
+
 		logger := NewLogger()
 
 		list, err := cmd.Flags().GetBool("list")
@@ -196,11 +201,21 @@ var rootCmd = &cobra.Command{
 			return
 		}
 
+		whitelist, err := cmd.Flags().GetStringSlice("whitelist")
+		if err != nil {
+			logger.Errorf("%v", err)
+		}
+
 		script.On("message", func(message string) {
 			msg, _ := frida.ScriptMessageToMessage(message)
 			switch msg.Type {
 			case frida.MessageTypeSend:
-				PrintData(msg.Payload, false, false, blacklistToRegex(blacklist), logger)
+				PrintData(msg.Payload,
+					false,
+					false,
+					listToRegex(whitelist),
+					listToRegex(blacklist),
+					logger)
 			case frida.MessageTypeLog:
 				logger.Infof("SCRIPT: %v", msg)
 			default:
@@ -246,10 +261,10 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-func blacklistToRegex(bl []string) []*regexp.Regexp {
-	rex := make([]*regexp.Regexp, len(bl))
-	for i, b := range bl {
-		replaced := strings.ReplaceAll(b, "*", ".*")
+func listToRegex(ls []string) []*regexp.Regexp {
+	rex := make([]*regexp.Regexp, len(ls))
+	for i, item := range ls {
+		replaced := strings.ReplaceAll(item, "*", ".*")
 		r := regexp.MustCompile(replaced)
 		rex[i] = r
 	}
@@ -263,6 +278,7 @@ func main() {
 	rootCmd.Flags().StringP("file", "f", "", "spawn the file")
 	rootCmd.Flags().StringP("output", "o", "", "save output to this file")
 
+	rootCmd.Flags().StringSliceP("whitelist", "w", []string{}, "whitelist the following wildcard connections")
 	rootCmd.Flags().StringSliceP("blacklist", "b", []string{}, "blacklist the following wildcard connections")
 
 	rootCmd.Flags().BoolP("list", "l", false, "list available devices")

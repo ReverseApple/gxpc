@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func PrintData(value any, decode, printHex bool, blacklist []*regexp.Regexp, logger *Logger) {
+func PrintData(value any, decode, printHex bool, whitelist, blacklist []*regexp.Regexp, logger *Logger) {
 	val := reflect.ValueOf(value)
 
 	data := make(map[string]any)
@@ -20,30 +20,39 @@ func PrintData(value any, decode, printHex bool, blacklist []*regexp.Regexp, log
 		}
 	}
 	name := data["connName"].(string)
-	if !connectionNameInBlacklist(name, blacklist) {
-		var message string
-		fnName := fmt.Sprintf("Name: %s\n", data["name"])
-		connName := fmt.Sprintf("Connection Name: %s\n", data["connName"])
-		printData(reflect.ValueOf(data["dictionary"]), "", "", &message)
-		total := len(fnName) + len(connName) + len(message) + 100
 
-		builder := strings.Builder{}
-		builder.Grow(total)
-
-		builder.WriteString(fnName)
-		builder.WriteString(connName)
-		builder.WriteString("Data:\n")
-		builder.WriteString(message)
-		builder.WriteString(fmt.Sprintf("\n%s\n", strings.Repeat("=", 80)))
-
-		logger.Scriptf("Name: %s", data["name"])
-		logger.Scriptf("Connection Name: %s", data["connName"])
-		logger.Scriptf("Data:")
-		logger.Scriptf("%s", message)
-		fmt.Println(strings.Repeat("=", 80))
-
-		logger.writeToFileScript(builder.String())
+	if len(whitelist) > 0 {
+		if !connInList(name, whitelist) {
+			return
+		}
+	} else {
+		if connInList(name, blacklist) {
+			return
+		}
 	}
+
+	var message string
+	fnName := fmt.Sprintf("Name: %s\n", data["name"])
+	connName := fmt.Sprintf("Connection Name: %s\n", data["connName"])
+	printData(reflect.ValueOf(data["dictionary"]), "", "", &message)
+	total := len(fnName) + len(connName) + len(message) + 100
+
+	builder := strings.Builder{}
+	builder.Grow(total)
+
+	builder.WriteString(fnName)
+	builder.WriteString(connName)
+	builder.WriteString("Data:\n")
+	builder.WriteString(message)
+	builder.WriteString(fmt.Sprintf("\n%s\n", strings.Repeat("=", 80)))
+
+	logger.Scriptf("Name: %s", data["name"])
+	logger.Scriptf("Connection Name: %s", data["connName"])
+	logger.Scriptf("Data:")
+	logger.Scriptf("%s", message)
+	fmt.Println(strings.Repeat("=", 80))
+
+	logger.writeToFileScript(builder.String())
 }
 
 func printData(v reflect.Value, key, indent string, message *string) {
@@ -78,8 +87,8 @@ func printData(v reflect.Value, key, indent string, message *string) {
 	}
 }
 
-func connectionNameInBlacklist(connName string, blacklist []*regexp.Regexp) bool {
-	for _, b := range blacklist {
+func connInList(connName string, list []*regexp.Regexp) bool {
+	for _, b := range list {
 		if match := b.MatchString(connName); match {
 			return true
 		}
