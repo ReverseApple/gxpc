@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/signal"
 	"regexp"
-	"runtime/pprof"
 	"strings"
 	"syscall"
 )
@@ -16,14 +15,13 @@ import (
 //go:embed script.js
 var scContent string
 
-var rootCmd = &cobra.Command{
-	Use:   "gxpc [spawn_args]",
-	Short: "XPC sniffer",
-	Run: func(cmd *cobra.Command, args []string) {
-		out, _ := os.Create("out.pprof")
-		pprof.StartCPUProfile(out)
-		defer pprof.StopCPUProfile()
+var Version string
 
+var rootCmd = &cobra.Command{
+	Use:     "gxpc [spawn_args]",
+	Short:   "XPC sniffer",
+	Version: Version,
+	Run: func(cmd *cobra.Command, args []string) {
 		logger := NewLogger()
 
 		list, err := cmd.Flags().GetBool("list")

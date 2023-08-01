@@ -14,7 +14,7 @@ builds:
       - amd64
     flags:
       - -trimpath
-    ldflags: -s -w
+    ldflags: -s -w -X main.Version={{.Tag}}
   - id: darwin_arm64
     binary: gxpc
     env:
@@ -27,7 +27,7 @@ builds:
       - arm64
     flags:
       - -trimpath
-    ldflags: -s -w
+    ldflags: -s -w -X main.Version={{.Tag}}
 checksum:
   name_template: 'checksums.txt'
 snapshot:
