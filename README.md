@@ -15,7 +15,6 @@ or do it manually as described below.
 # Usage
 
 ```bash
-$ gxpc --help
 XPC sniffer
 
 Usage:
@@ -31,7 +30,16 @@ Flags:
   -o, --output string       save output to this file
   -p, --pid int             PID of wanted process (default -1)
   -r, --remote string       connect to device at IP address
+  -v, --version             version for gxpc
+  -w, --whitelist strings   whitelist the following wildcard connections
 ```
+
+If you do not pass `-i` flag, default device is USB.
+
+If you want to spawn a file/binary, pass the `-f` that points to the file/binary you want to spawn along with the arguments.
+
+* `gxpc -i local -f /bin/cat /tmp/somefile` - without some specific flags to the spawned binary
+* `gxpc -i local -f /path/to/binary -- -a -b "TEST"` - with some specific flags to the spawned binary
 
 ![Running gxpc](running.png)
 
@@ -39,7 +47,3 @@ Flags:
 
 ![Getting airplane mode](airplane_mode.png)
 
-If you do not pass `-i` flag, by default it will use USB device.
-
-If you want to spawn a file/binary, pass the `-f` that points to the file/binary you want to spawn along with the arguments. 
-For example to run `/bin/cat` with `/tmp/somefile`, use `gxpc -i local -f /bin/cat /tmp/somefile`.
