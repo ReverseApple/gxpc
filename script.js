@@ -161,9 +161,10 @@ function extract(conn, xpc_object, dict) {
     }
 }
 
-function parseAndSendDictData(fnName, conn, dict) {
+var ps = new NativeCallback((fnName, conn, dict) => {
     var ret = {};
-    ret["name"] = fnName;
+    var fname = rcstr(fnName);
+    ret["name"] = fname;
     ret["connName"] = "UNKNOWN";
     ret["pid"] = xpc_connection_get_pid(conn);
     if (conn != null) {
@@ -172,52 +173,99 @@ function parseAndSendDictData(fnName, conn, dict) {
             ret["connName"] = rcstr(connName);
         }
     }
-    if (fnName == "xpc_connection_set_event_handler") {
+    if (fname == "xpc_connection_set_event_handler") {
         var data = {"blockImplementation": dict.toString()};
         ret["dictionary"] = data;
     } else {
         ret["dictionary"] = extract(conn, dict, dict);
     }
     send(JSON.stringify(ret));
-}
+}, "void", ["pointer", "pointer", "pointer"]);
 
-Interceptor.attach(xpc_connection_send_notification, {
-    onEnter(args) {
-        parseAndSendDictData("xpc_connection_send_notification", args[0], args[1]);
+var cm_notification = new CModule(`
+    #include <gum/guminterceptor.h>
+    extern void ps(void*,void*,void*);
+    
+    void onEnter(GumInvocationContext * ic)
+    {
+        void * conn = gum_invocation_context_get_nth_argument(ic,0);
+        void * obj = gum_invocation_context_get_nth_argument(ic,1);
+        ps("xpc_connection_send_notification", conn, obj);
     }
-});
+`, {ps});
 
-Interceptor.attach(xpc_connection_send_message, {
-    onEnter(args) {
-        parseAndSendDictData("xpc_connection_send_message", args[0], args[1]);
+var cm_send_message = new CModule(`
+    #include <gum/guminterceptor.h>
+    extern void ps(void*,void*,void*);
+    
+    void onEnter(GumInvocationContext * ic)
+    {
+        void * conn = gum_invocation_context_get_nth_argument(ic,0);
+        void * obj = gum_invocation_context_get_nth_argument(ic,1);
+        ps("xpc_connection_send_message", conn, obj);
     }
-});
+`, {ps});
 
-Interceptor.attach(xpc_connection_send_message_with_reply, {
-    onEnter(args) {
-        parseAndSendDictData("xpc_connection_send_message_with_reply", args[0], args[1]);
+var cm_send_message_with_reply = new CModule(`
+    #include <gum/guminterceptor.h>
+    extern void ps(void*,void*,void*);
+    
+    void onEnter(GumInvocationContext * ic)
+    {
+        void * conn = gum_invocation_context_get_nth_argument(ic,0);
+        void * obj = gum_invocation_context_get_nth_argument(ic,1);
+        ps("xpc_connection_send_message_with_reply", conn, obj);
     }
-})
+`, {ps});
 
-Interceptor.attach(xpc_connection_send_message_with_reply_sync, {
-    onEnter(args) {
-        parseAndSendDictData("xpc_connection_send_message_with_reply_sync", args[0], args[1]);
+var cm_send_message_with_reply_sync = new CModule(`
+    #include <gum/guminterceptor.h>
+    extern void ps(void*,void*,void*);
+    
+    void onEnter(GumInvocationContext * ic)
+    {
+        void * conn = gum_invocation_context_get_nth_argument(ic,0);
+        void * obj = gum_invocation_context_get_nth_argument(ic,1);
+        ps("xpc_connection_send_message_with_reply_sync", conn, obj);
     }
-})
+`, {ps});
 
-Interceptor.attach(xpc_connection_call_event_handler, {
-    onEnter(args) {
-        parseAndSendDictData("xpc_connection_call_event_handler", args[0], args[1]);
+var cm_call_event_handler = new CModule(`
+    #include <gum/guminterceptor.h>
+    extern void ps(void*,void*,void*);
+    
+    void onEnter(GumInvocationContext * ic)
+    {
+        void * conn = gum_invocation_context_get_nth_argument(ic,0);
+        void * obj = gum_invocation_context_get_nth_argument(ic,1);
+        ps("xpc_connection_call_event_handler", conn, obj);
     }
-});
+`, {ps});
 
-Interceptor.attach(xpc_connection_set_event_handler, {
-    onEnter(args) {
-        const implementationAddr = args[1].add(Process.pointerSize * 2);
-        const implementation = Memory.readPointer(implementationAddr);
-        parseAndSendDictData("xpc_connection_set_event_handler", args[0], implementation);
+var psize = Memory.alloc(Process.pointerSize);
+Memory.writeInt(psize, Process.pointerSize * 2);
+
+var cm_set_event_handler = new CModule(`
+    #include <gum/guminterceptor.h>
+    extern int pointerSize;
+    extern void ps(void*,void*,void*);
+    
+    void onEnter(GumInvocationContext * ic)
+    {
+        void * conn = gum_invocation_context_get_nth_argument(ic,0);
+        void * obj = gum_invocation_context_get_nth_argument(ic,1);
+        void * impl = obj + (pointerSize*2);
+        ps("xpc_connection_set_event_handler", conn, impl);
     }
-})
+`, {pointerSize: psize, ps});
+
+Interceptor.attach(xpc_connection_send_notification, cm_notification);
+Interceptor.attach(xpc_connection_send_message, cm_send_message);
+Interceptor.attach(xpc_connection_send_message_with_reply, cm_send_message_with_reply);
+Interceptor.attach(xpc_connection_send_message_with_reply_sync, cm_send_message_with_reply_sync);
+Interceptor.attach(xpc_connection_call_event_handler, cm_call_event_handler);
+
+Interceptor.attach(xpc_connection_set_event_handler, cm_set_event_handler);
 
 Interceptor.attach(xpc_connection_create_mach_service, {
     onEnter(args) {
