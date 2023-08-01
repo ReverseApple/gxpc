@@ -48,6 +48,10 @@ func PrintData(value any, decode, printHex bool, whitelist, blacklist []*regexp.
 
 	logger.Scriptf("Name: %s", data["name"])
 	logger.Scriptf("Connection Name: %s", data["connName"])
+	pid, ok := data["pid"].(float64)
+	if ok {
+		logger.Scriptf("PID: %d", int(pid))
+	}
 	logger.Scriptf("Data:")
 	logger.Scriptf("%s", message)
 	fmt.Println(strings.Repeat("=", 80))

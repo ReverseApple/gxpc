@@ -11,8 +11,6 @@ var _xpc_connection_call_event_handler = DebugSymbol.fromName("_xpc_connection_c
 var CFBinaryPlistCreate15 = new NativeFunction(__CFBinaryPlistCreate15, "pointer", ["pointer", "int", "pointer"]);
 var xpc_connection_call_event_handler = new NativeFunction(_xpc_connection_call_event_handler, "void", ["pointer", "pointer"]);
 
-var xpc_dictionary_set_string = Module.findExportByName(null, "xpc_dictionary_set_string");
-
 // Use these functions to make sense out of xpc_object_t and xpc_connection_t
 var xpc_connection_get_name = getFunc("xpc_connection_get_name", "pointer", ["pointer"]);
 var xpc_get_type = getFunc("xpc_get_type", "pointer", ["pointer"]);
@@ -32,6 +30,8 @@ var xpc_array_get_value = getFunc("xpc_array_get_value", "pointer", ["pointer", 
 
 var xpc_data_get_length = getFunc("xpc_data_get_length", "int", ["pointer"]);
 var xpc_data_get_bytes = getFunc("xpc_data_get_bytes", "int", ["pointer", "pointer", "int", "int"]);
+
+var xpc_connection_get_pid = getFunc("xpc_connection_get_pid", "int", ["pointer"]);
 
 // helper function that will create new NativeFunction
 function getFunc(name, ret_type, args) {
@@ -165,6 +165,7 @@ function parseAndSendDictData(fnName, conn, dict) {
     var ret = {};
     ret["name"] = fnName;
     ret["connName"] = "UNKNOWN";
+    ret["pid"] = xpc_connection_get_pid(conn);
     if (conn != null) {
         var connName = xpc_connection_get_name(conn);
         if (connName != 0x0) {
@@ -229,16 +230,3 @@ Interceptor.attach(xpc_connection_create_mach_service, {
         send(JSON.stringify(ret));
     },
 })
-
-Interceptor.attach(xpc_dictionary_set_string, {
-    onEnter(args) {
-        var ret = {};
-        ret["connName"] = "DICT CREATION";
-        ret["name"] = "xpc_dictionary_set_string";
-        ret["dictionary"] = {
-            "key": rcstr(args[1]),
-            "value": rcstr(args[2])
-        };
-        send(JSON.stringify(ret));
-    }
-});
