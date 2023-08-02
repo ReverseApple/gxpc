@@ -1,37 +1,46 @@
-// Intercept these functions
-var xpc_connection_send_notification = Module.findExportByName(null, "xpc_connection_send_notification");
-var xpc_connection_send_message = Module.findExportByName(null, "xpc_connection_send_message");
-var xpc_connection_send_message_with_reply = Module.findExportByName(null, "xpc_connection_send_message_with_reply");
-var xpc_connection_send_message_with_reply_sync = Module.findExportByName(null, "xpc_connection_send_message_with_reply_sync");
-var xpc_connection_create_mach_service = Module.findExportByName(null, "xpc_connection_create_mach_service");
-var xpc_connection_set_event_handler = Module.findExportByName(null, "xpc_connection_set_event_handler");
+const LIBXPC_PATH = '/usr/lib/system/libxpc.dylib';
 
-var __CFBinaryPlistCreate15 = DebugSymbol.fromName('__CFBinaryPlistCreate15').address;
-var _xpc_connection_call_event_handler = DebugSymbol.fromName("_xpc_connection_call_event_handler").address;
-var CFBinaryPlistCreate15 = new NativeFunction(__CFBinaryPlistCreate15, "pointer", ["pointer", "int", "pointer"]);
-var xpc_connection_call_event_handler = new NativeFunction(_xpc_connection_call_event_handler, "void", ["pointer", "pointer"]);
+// ObjC classes
+const {
+    NSData,
+    NSPropertyListSerialization,
+    NSXPCDecoder,
+} = ObjC.classes;
+
+// Intercept these functions
+const xpc_connection_send_notification = Module.findExportByName(LIBXPC_PATH, "xpc_connection_send_notification");
+const xpc_connection_send_message = Module.findExportByName(LIBXPC_PATH, "xpc_connection_send_message");
+const xpc_connection_send_message_with_reply = Module.findExportByName(LIBXPC_PATH, "xpc_connection_send_message_with_reply");
+const xpc_connection_send_message_with_reply_sync = Module.findExportByName(LIBXPC_PATH, "xpc_connection_send_message_with_reply_sync");
+const xpc_connection_create_mach_service = Module.findExportByName(LIBXPC_PATH, "xpc_connection_create_mach_service");
+const xpc_connection_set_event_handler = Module.findExportByName(LIBXPC_PATH, "xpc_connection_set_event_handler");
+
+const __CFBinaryPlistCreate15 = DebugSymbol.fromName('__CFBinaryPlistCreate15').address;
+const _xpc_connection_call_event_handler = DebugSymbol.fromName("_xpc_connection_call_event_handler").address;
+const CFBinaryPlistCreate15 = new NativeFunction(__CFBinaryPlistCreate15, "pointer", ["pointer", "int", "pointer"]);
+const xpc_connection_call_event_handler = new NativeFunction(_xpc_connection_call_event_handler, "void", ["pointer", "pointer"]);
 
 // Use these functions to make sense out of xpc_object_t and xpc_connection_t
-var xpc_connection_get_name = getFunc("xpc_connection_get_name", "pointer", ["pointer"]);
-var xpc_get_type = getFunc("xpc_get_type", "pointer", ["pointer"]);
-var xpc_type_get_name = getFunc("xpc_type_get_name", "pointer", ["pointer"]);
-var xpc_dictionary_get_value = getFunc("xpc_dictionary_get_value", "pointer", ["pointer", "pointer"]);
-var xpc_string_get_string_ptr = getFunc("xpc_string_get_string_ptr", "pointer", ["pointer"]);
-var xpc_copy_description = getFunc("xpc_copy_description", "pointer", ["pointer"]);
+const xpc_connection_get_name = getFunc("xpc_connection_get_name", "pointer", ["pointer"]);
+const xpc_get_type = getFunc("xpc_get_type", "pointer", ["pointer"]);
+const xpc_type_get_name = getFunc("xpc_type_get_name", "pointer", ["pointer"]);
+const xpc_dictionary_get_value = getFunc("xpc_dictionary_get_value", "pointer", ["pointer", "pointer"]);
+const xpc_string_get_string_ptr = getFunc("xpc_string_get_string_ptr", "pointer", ["pointer"]);
+const xpc_copy_description = getFunc("xpc_copy_description", "pointer", ["pointer"]);
 
-var xpc_uint64_get_value = getFunc("xpc_uint64_get_value", "int", ["pointer"]);
-var xpc_int64_get_value = getFunc("xpc_int64_get_value", "int", ["pointer"]);
-var xpc_double_get_value = getFunc("xpc_double_get_value", "double", ["pointer"]);
-var xpc_bool_get_value = getFunc("xpc_bool_get_value", "bool", ["pointer"]);
-var xpc_uuid_get_bytes = getFunc("xpc_uuid_get_bytes", "pointer", ["pointer"]);
+const xpc_uint64_get_value = getFunc("xpc_uint64_get_value", "int", ["pointer"]);
+const xpc_int64_get_value = getFunc("xpc_int64_get_value", "int", ["pointer"]);
+const xpc_double_get_value = getFunc("xpc_double_get_value", "double", ["pointer"]);
+const xpc_bool_get_value = getFunc("xpc_bool_get_value", "bool", ["pointer"]);
+const xpc_uuid_get_bytes = getFunc("xpc_uuid_get_bytes", "pointer", ["pointer"]);
 
-var xpc_array_get_count = getFunc("xpc_array_get_count", "int", ["pointer"]);
-var xpc_array_get_value = getFunc("xpc_array_get_value", "pointer", ["pointer", "int"]);
+const xpc_array_get_count = getFunc("xpc_array_get_count", "int", ["pointer"]);
+const xpc_array_get_value = getFunc("xpc_array_get_value", "pointer", ["pointer", "int"]);
 
-var xpc_data_get_length = getFunc("xpc_data_get_length", "int", ["pointer"]);
-var xpc_data_get_bytes = getFunc("xpc_data_get_bytes", "int", ["pointer", "pointer", "int", "int"]);
+const xpc_data_get_length = getFunc("xpc_data_get_length", "int", ["pointer"]);
+const xpc_data_get_bytes = getFunc("xpc_data_get_bytes", "int", ["pointer", "pointer", "int", "int"]);
 
-var xpc_connection_get_pid = getFunc("xpc_connection_get_pid", "int", ["pointer"]);
+const xpc_connection_get_pid = getFunc("xpc_connection_get_pid", "int", ["pointer"]);
 
 // helper function that will create new NativeFunction
 function getFunc(name, ret_type, args) {
@@ -64,7 +73,7 @@ function getXPCString(val) {
 function getXPCData(conn, dict, buff, n) {
     const hdr = buff.readCString(8);
     if (hdr == "bplist15") {
-        const plist = CFBinaryPlistCreate15(buff, n, ptr("0x0"));
+        const plist = CFBinaryPlistCreate15(buff, n, NULL);
         return ObjC.Object(plist).description().toString();
     } else if (hdr == "bplist17") {
         if (conn != null) {
@@ -75,11 +84,11 @@ function getXPCData(conn, dict, buff, n) {
     } else if (hdr == "bplist00") {
         const format = Memory.alloc(8);
         format.writeU64(0xaaaaaaaa);
-        var ObjCData = ObjC.classes.NSData.dataWithBytes_length_(buff, n);
-        const plist = ObjC.classes.NSPropertyListSerialization.propertyListWithData_options_format_error_(ObjCData, 0, format, ptr(0x0));
+        var ObjCData = NSData.dataWithBytes_length_(buff, n);
+        const plist = NSPropertyListSerialization.propertyListWithData_options_format_error_(ObjCData, 0, format, NULL);
         return ObjC.Object(plist).description().toString();
     } else {
-        var ObjCData = ObjC.classes.NSData.dataWithBytes_length_(buff, n);
+        var ObjCData = NSData.dataWithBytes_length_(buff, n);
         var base64Encoded = ObjCData.base64EncodedStringWithOptions_(0).toString();
         return base64Encoded;
     }
@@ -106,7 +115,7 @@ function getKeys(description) {
 
 // https://github.com/nst/iOS-Runtime-Headers/blob/master/Frameworks/Foundation.framework/NSXPCDecoder.h
 function parseBPList17(conn, dict) {
-    var decoder = ObjC.classes.NSXPCDecoder.alloc().init();
+    var decoder = NSXPCDecoder.alloc().init();
     decoder["- set_connection:"](conn);
     decoder["- _startReadingFromXPCObject:"](dict);
     return decoder.debugDescription().toString();
@@ -169,7 +178,7 @@ var ps = new NativeCallback((fnName, conn, dict) => {
     ret["pid"] = xpc_connection_get_pid(conn);
     if (conn != null) {
         var connName = xpc_connection_get_name(conn);
-        if (connName != 0x0) {
+        if (! connName.isNull()) {
             ret["connName"] = rcstr(connName);
         }
     }
