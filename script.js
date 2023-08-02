@@ -40,6 +40,8 @@ const xpc_array_get_value = getFunc("xpc_array_get_value", "pointer", ["pointer"
 const xpc_data_get_length = getFunc("xpc_data_get_length", "int", ["pointer"]);
 const xpc_data_get_bytes = getFunc("xpc_data_get_bytes", "int", ["pointer", "pointer", "int", "int"]);
 
+const xpc_date_get_value = getFunc("xpc_date_get_value", "int64", ["pointer"]);
+
 const xpc_connection_get_pid = getFunc("xpc_connection_get_pid", "int", ["pointer"]);
 
 // helper function that will create new NativeFunction
@@ -68,6 +70,22 @@ function rcstr(cstr) {
 function getXPCString(val) {
     var content = xpc_string_get_string_ptr(val);
     return rcstr(content)
+}
+
+// get human-readable date from Unix timestamp
+function getXPCDate(val) {
+    var nanoseconds = xpc_date_get_value(val);
+
+    // Convert nanoseconds to milliseconds
+    const timestampInMilliseconds = nanoseconds / 1000000;
+
+    // Create a JavaScript Date object in UTC
+    const date = new Date(timestampInMilliseconds);
+
+    return {
+        iso: date.toISOString(),
+        nanoseconds: nanoseconds,
+    };
 }
 
 function getXPCData(conn, dict, buff, n) {
@@ -156,6 +174,8 @@ function extract(conn, xpc_object, dict) {
             return xpc_uint64_get_value(xpc_object);
         case "int64":
             return xpc_int64_get_value(xpc_object);
+        case "date":
+            return getXPCDate(xpc_object);
         case "array":
             ret = [];
             var count = xpc_array_get_count(xpc_object);
