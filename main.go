@@ -250,11 +250,6 @@ var rootCmd = &cobra.Command{
 			logger.Infof("Script unloaded")
 		case <-detached:
 			logger.Infof("Exiting...")
-			if err := script.Unload(); err != nil {
-				logger.Errorf("Error unloading script: %v", err)
-				return
-			}
-			logger.Infof("Script unloaded")
 		}
 	},
 }
