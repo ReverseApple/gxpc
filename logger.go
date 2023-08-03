@@ -32,7 +32,7 @@ func NewLogger() *Logger {
 		warnLogger:   log.New(os.Stdout, warnColor.Sprintf("%s  ", "⚠"), 0),
 		errorLogger:  log.New(os.Stderr, errorColor.Sprintf("%s  ", "❗️"), 0),
 		fatalLogger:  log.New(os.Stderr, fatalColor.Sprintf("%s  ", "⛔️"), 0),
-		scriptLogger: log.New(os.Stdout, scriptColor.Sprintf("%s  ", "✔"), 0),
+		scriptLogger: log.New(os.Stdout, scriptColor.Sprintf("%s  ", "✅"), 0),
 	}
 }
 
