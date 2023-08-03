@@ -44,6 +44,3 @@ If you want to spawn a file/binary, pass the `-f` that points to the file/binary
 ![Running gxpc](running.png)
 
 ![Running against Signal](running_one.png)
-
-![Getting airplane mode](airplane_mode.png)
-
