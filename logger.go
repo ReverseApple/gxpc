@@ -28,11 +28,11 @@ type Logger struct {
 
 func NewLogger() *Logger {
 	return &Logger{
-		infoLogger:   log.New(os.Stdout, infoColor.Sprintf("%s  ", "⬥"), 0),
-		warnLogger:   log.New(os.Stdout, warnColor.Sprintf("%s  ", "⬥"), 0),
-		errorLogger:  log.New(os.Stderr, errorColor.Sprintf("%s  ", "⬥"), 0),
-		fatalLogger:  log.New(os.Stderr, fatalColor.Sprintf("%s  ", "⬥"), 0),
-		scriptLogger: log.New(os.Stdout, scriptColor.Sprintf("%s  ", "⬥"), 0),
+		infoLogger:   log.New(os.Stdout, infoColor.Sprintf("%s  ", "⚡"), 0),
+		warnLogger:   log.New(os.Stdout, warnColor.Sprintf("%s  ", "⚠"), 0),
+		errorLogger:  log.New(os.Stderr, errorColor.Sprintf("%s  ", "❗️"), 0),
+		fatalLogger:  log.New(os.Stderr, fatalColor.Sprintf("%s  ", "⛔️"), 0),
+		scriptLogger: log.New(os.Stdout, scriptColor.Sprintf("%s  ", "✔"), 0),
 	}
 }
 
