@@ -185,6 +185,8 @@ function extract(conn, xpc_object, dict) {
                 ret.push(el);
             }
             return ret;
+        case "null":
+            return "null-object";
         default:
             return {};
     }
