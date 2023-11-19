@@ -6,18 +6,36 @@ const (
 	ILLEGAL Type = "ILLEGAL"
 	EOF          = "EOF"
 
-	IDENT = "IDENT"
+	STRING = "STRING"
+	INT    = "INT"
+	IDENT  = "IDENT"
+
+	LBRACE = "{"
+	RBRACE = "}"
 
 	EQ = "="
 	GT = ">"
 
+	COLON = ":"
+	COMMA = ","
+
 	DEF = "=>"
 
-	FN = "FN"
+	FN     = "FN"
+	FIRST  = "FIRST"
+	SECOND = "SECOND"
+	THIRD  = "THIRD"
+	WITH   = "WITH"
+	NULL   = "NULL"
 )
 
 var keywords = map[string]Type{
-	"fn": FN,
+	"fn":     FN,
+	"first":  FIRST,
+	"second": SECOND,
+	"third":  THIRD,
+	"with":   WITH,
+	"null":   NULL,
 }
 
 func LookupIdent(ident string) Type {

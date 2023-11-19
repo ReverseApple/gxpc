@@ -33,12 +33,27 @@ func (l *Lexer) NextToken() token.Token {
 		}
 	case '>':
 		tok = newToken(token.GT, l.ch)
+	case '{':
+		tok = newToken(token.LBRACE, l.ch)
+	case '}':
+		tok = newToken(token.RBRACE, l.ch)
+	case ':':
+		tok = newToken(token.COLON, l.ch)
+	case ',':
+		tok = newToken(token.COMMA, l.ch)
+	case '"':
+		tok.TokenType = token.STRING
+		tok.Literal = l.readString()
 	case 0:
 		tok = newToken(token.EOF, 0)
 	default:
 		if unicode.IsLetter(rune(l.ch)) {
 			tok.Literal = l.readIdentifier()
 			tok.TokenType = token.LookupIdent(tok.Literal)
+			return tok
+		} else if unicode.IsNumber(rune(l.ch)) {
+			tok.Literal = l.readNumber()
+			tok.TokenType = token.INT
 			return tok
 		} else {
 			tok = newToken(token.ILLEGAL, l.ch)
@@ -47,6 +62,25 @@ func (l *Lexer) NextToken() token.Token {
 
 	l.readChar()
 	return tok
+}
+
+func (l *Lexer) readNumber() string {
+	pos := l.position
+	for unicode.IsNumber(rune(l.ch)) {
+		l.readChar()
+	}
+	return l.input[pos:l.position]
+}
+
+func (l *Lexer) readString() string {
+	pos := l.position + 1
+	for {
+		l.readChar()
+		if l.ch == '"' || l.ch == 0 {
+			break
+		}
+	}
+	return l.input[pos:l.position]
 }
 
 func (l *Lexer) readIdentifier() string {
