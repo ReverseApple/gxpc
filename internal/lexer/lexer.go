@@ -37,8 +37,14 @@ func (l *Lexer) NextToken() token.Token {
 		tok = newToken(token.LBRACE, l.ch)
 	case '}':
 		tok = newToken(token.RBRACE, l.ch)
+	case '[':
+		tok = newToken(token.LBRACKET, l.ch)
+	case ']':
+		tok = newToken(token.RBRACKET, l.ch)
 	case ':':
 		tok = newToken(token.COLON, l.ch)
+	case ';':
+		tok = newToken(token.SEMI, l.ch)
 	case ',':
 		tok = newToken(token.COMMA, l.ch)
 	case '"':
@@ -52,8 +58,14 @@ func (l *Lexer) NextToken() token.Token {
 			tok.TokenType = token.LookupIdent(tok.Literal)
 			return tok
 		} else if unicode.IsNumber(rune(l.ch)) {
-			tok.Literal = l.readNumber()
-			tok.TokenType = token.INT
+			literal, isFloat := l.readNumber()
+			if isFloat {
+				tok.Literal = literal
+				tok.TokenType = token.FLOAT
+			} else {
+				tok.Literal = literal
+				tok.TokenType = token.INT
+			}
 			return tok
 		} else {
 			tok = newToken(token.ILLEGAL, l.ch)
@@ -64,12 +76,21 @@ func (l *Lexer) NextToken() token.Token {
 	return tok
 }
 
-func (l *Lexer) readNumber() string {
+func (l *Lexer) readNumber() (string, bool) {
+	isFloat := false
 	pos := l.position
-	for unicode.IsNumber(rune(l.ch)) {
+	for unicode.IsNumber(rune(l.ch)) || l.ch == '.' {
+		if l.ch == '.' {
+			if unicode.IsNumber(rune(l.peekChar())) {
+				isFloat = true
+				l.readChar()
+			} else {
+				break
+			}
+		}
 		l.readChar()
 	}
-	return l.input[pos:l.position]
+	return l.input[pos:l.position], isFloat
 }
 
 func (l *Lexer) readString() string {

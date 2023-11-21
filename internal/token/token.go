@@ -8,13 +8,17 @@ const (
 
 	STRING = "STRING"
 	INT    = "INT"
+	FLOAT  = "FLOAT"
 	IDENT  = "IDENT"
 
-	LBRACE = "{"
-	RBRACE = "}"
+	LBRACE   = "{"
+	RBRACE   = "}"
+	LBRACKET = "["
+	RBRACKET = "]"
 
-	EQ = "="
-	GT = ">"
+	SEMI = ";"
+	EQ   = "="
+	GT   = ">"
 
 	COLON = ":"
 	COMMA = ","
