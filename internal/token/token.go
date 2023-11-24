@@ -8,7 +8,7 @@ const (
 
 	STRING = "STRING"
 	INT    = "INT"
-	FLOAT  = "FLOAT"
+	DOUBLE = "DOUBLE"
 	IDENT  = "IDENT"
 
 	LBRACE   = "{"

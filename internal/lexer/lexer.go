@@ -58,10 +58,10 @@ func (l *Lexer) NextToken() token.Token {
 			tok.TokenType = token.LookupIdent(tok.Literal)
 			return tok
 		} else if unicode.IsNumber(rune(l.ch)) {
-			literal, isFloat := l.readNumber()
-			if isFloat {
+			literal, isDouble := l.readNumber()
+			if isDouble {
 				tok.Literal = literal
-				tok.TokenType = token.FLOAT
+				tok.TokenType = token.DOUBLE
 			} else {
 				tok.Literal = literal
 				tok.TokenType = token.INT
@@ -77,12 +77,12 @@ func (l *Lexer) NextToken() token.Token {
 }
 
 func (l *Lexer) readNumber() (string, bool) {
-	isFloat := false
+	isDouble := false
 	pos := l.position
 	for unicode.IsNumber(rune(l.ch)) || l.ch == '.' {
 		if l.ch == '.' {
 			if unicode.IsNumber(rune(l.peekChar())) {
-				isFloat = true
+				isDouble = true
 				l.readChar()
 			} else {
 				break
@@ -90,7 +90,7 @@ func (l *Lexer) readNumber() (string, bool) {
 		}
 		l.readChar()
 	}
-	return l.input[pos:l.position], isFloat
+	return l.input[pos:l.position], isDouble
 }
 
 func (l *Lexer) readString() string {
