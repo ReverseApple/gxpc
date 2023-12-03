@@ -8,7 +8,9 @@ import (
 	"strings"
 )
 
-func PrintData(value any, decode, printHex bool, whitelist, blacklist []*regexp.Regexp, logger *Logger) {
+func PrintData(value any, decode, printHex bool,
+	whitelist, blacklist, whitelistp, blacklistp []*regexp.Regexp,
+	logger *Logger) {
 	val := reflect.ValueOf(value)
 
 	data := make(map[string]any)
@@ -20,6 +22,24 @@ func PrintData(value any, decode, printHex bool, whitelist, blacklist []*regexp.
 		}
 	}
 	name := data["connName"].(string)
+
+	if len(whitelist) > 0 || len(blacklist) > 0 {
+		if len(whitelist) > 0 && !connInList(name, whitelist) {
+			return
+		} else {
+			if connInList(name, blacklist) {
+				return
+			}
+		}
+	} else {
+		if len(whitelistp) > 0 && !pidInList(data["pid"].(float64), whitelistp) {
+			return
+		} else {
+			if pidInList(data["pid"].(float64), blacklistp) {
+				return
+			}
+		}
+	}
 
 	if len(whitelist) > 0 {
 		if !connInList(name, whitelist) {
@@ -94,6 +114,16 @@ func printData(v reflect.Value, key, indent string, message *string) {
 func connInList(connName string, list []*regexp.Regexp) bool {
 	for _, b := range list {
 		if match := b.MatchString(connName); match {
+			return true
+		}
+	}
+	return false
+}
+
+func pidInList(pid float64, list []*regexp.Regexp) bool {
+	ps := fmt.Sprintf("%f", pid)
+	for _, b := range list {
+		if match := b.MatchString(ps); match {
 			return true
 		}
 	}

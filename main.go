@@ -202,6 +202,19 @@ var rootCmd = &cobra.Command{
 		whitelist, err := cmd.Flags().GetStringSlice("whitelist")
 		if err != nil {
 			logger.Errorf("%v", err)
+			return
+		}
+
+		blacklistp, err := cmd.Flags().GetStringSlice("blacklistp")
+		if err != nil {
+			logger.Errorf("%v", err)
+			return
+		}
+
+		whitelistp, err := cmd.Flags().GetStringSlice("whitelist")
+		if err != nil {
+			logger.Errorf("%v", err)
+			return
 		}
 
 		script.On("message", func(message string) {
@@ -213,6 +226,8 @@ var rootCmd = &cobra.Command{
 					false,
 					listToRegex(whitelist),
 					listToRegex(blacklist),
+					listToRegex(whitelistp),
+					listToRegex(blacklistp),
 					logger)
 			case frida.MessageTypeLog:
 				logger.Infof("SCRIPT: %v", msg)
@@ -271,8 +286,10 @@ func main() {
 	rootCmd.Flags().StringP("file", "f", "", "spawn the file")
 	rootCmd.Flags().StringP("output", "o", "", "save output to this file")
 
-	rootCmd.Flags().StringSliceP("whitelist", "w", []string{}, "whitelist the following wildcard connections")
-	rootCmd.Flags().StringSliceP("blacklist", "b", []string{}, "blacklist the following wildcard connections")
+	rootCmd.Flags().StringSliceP("whitelist", "w", []string{}, "whitelist connection by name")
+	rootCmd.Flags().StringSliceP("blacklist", "b", []string{}, "blacklist connection by name")
+	rootCmd.Flags().StringSliceP("whitelistp", "", []string{}, "whitelist connection by PID")
+	rootCmd.Flags().StringSliceP("blacklistp", "", []string{}, "blacklist connection by PID")
 
 	rootCmd.Flags().BoolP("list", "l", false, "list available devices")
 	//rootCmd.Flags().BoolP("decode", "d", true, "try to decode(bplist00 or bplist15), otherwise print base64 of bytes")
