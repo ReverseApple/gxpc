@@ -6,11 +6,21 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 )
+
+type ctr struct {
+	c int
+	l *sync.Mutex
+}
+
+var c = &ctr{l: &sync.Mutex{}}
 
 func PrintData(value any, decode, printHex bool,
 	whitelist, blacklist, whitelistp, blacklistp []*regexp.Regexp,
 	logger *Logger) {
+	msg := 0
+
 	val := reflect.ValueOf(value)
 
 	data := make(map[string]any)
@@ -41,18 +51,13 @@ func PrintData(value any, decode, printHex bool,
 		}
 	}
 
-	if len(whitelist) > 0 {
-		if !connInList(name, whitelist) {
-			return
-		}
-	} else {
-		if connInList(name, blacklist) {
-			return
-		}
-	}
+	c.l.Lock()
+	msg = c.c
+	c.c++
+	c.l.Unlock()
 
 	var message string
-	fnName := fmt.Sprintf("Name: %s\n", data["name"])
+	fnName := fmt.Sprintf("%d) Name: %s\n", msg, data["name"])
 	connName := fmt.Sprintf("Connection Name: %s\n", data["connName"])
 	printData(reflect.ValueOf(data["dictionary"]), "", "", &message)
 	total := len(fnName) + len(connName) + len(message) + 100
@@ -66,7 +71,7 @@ func PrintData(value any, decode, printHex bool,
 	builder.WriteString(message)
 	builder.WriteString(fmt.Sprintf("\n%s\n", strings.Repeat("=", 80)))
 
-	logger.Scriptf("Name: %s", data["name"])
+	logger.Scriptf("%d) Name: %s", msg, data["name"])
 	logger.Scriptf("Connection Name: %s", data["connName"])
 	pid, ok := data["pid"].(float64)
 	if ok {
