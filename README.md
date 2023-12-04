@@ -21,17 +21,18 @@ Usage:
   gxpc [spawn_args] [flags]
 
 Flags:
-  -b, --blacklist strings   blacklist the following wildcard connections
-  -f, --file string         spawn the file
-  -h, --help                help for gxpc
-  -i, --id string           connect to device with ID
-  -l, --list                list available devices
-  -n, --name string         process name
-  -o, --output string       save output to this file
-  -p, --pid int             PID of wanted process (default -1)
-  -r, --remote string       connect to device at IP address
-  -v, --version             version for gxpc
-  -w, --whitelist strings   whitelist the following wildcard connections
+  -b, --blacklist strings    blacklist connection by name
+      --blacklistp strings   blacklist connection by PID
+  -f, --file string          spawn the file
+  -h, --help                 help for gxpc
+  -i, --id string            connect to device with ID
+  -l, --list                 list available devices
+  -n, --name string          process name
+  -o, --output string        save output to this file
+  -p, --pid int              PID of wanted process (default -1)
+  -r, --remote string        connect to device at IP address
+  -w, --whitelist strings    whitelist connection by name
+      --whitelistp strings   whitelist connection by PID
 ```
 
 If you do not pass `-i` flag, default device is USB.
@@ -40,6 +41,10 @@ If you want to spawn a file/binary, pass the `-f` that points to the file/binary
 
 * `gxpc -i local -f /bin/cat /tmp/somefile` - without some specific flags to the spawned binary
 * `gxpc -i local -f /path/to/binary -- -a -b "TEST"` - with some specific flags to the spawned binary
+
+Additionally, you can filter on connection names or PIDs, if you pass both filters (name and PID), it will take only name. 
+`--whitelist` and `--whitelistp` along with the `--blacklist` and `--blacklistp` accepts the list, such as `--blacklistp "89,32,41"` which will 
+blacklist the ports 89, 32 and 41.
 
 ![Running gxpc](running.png)
 
