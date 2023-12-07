@@ -33,6 +33,11 @@ func PrintData(value any, decode, printHex bool,
 	}
 	name := data["connName"].(string)
 
+	var pid float64
+	if _, ok := data["pid"].(float64); ok {
+		pid = data["pid"].(float64)
+	}
+
 	if len(whitelist) > 0 || len(blacklist) > 0 {
 		if len(whitelist) > 0 && !connInList(name, whitelist) {
 			return
@@ -42,11 +47,13 @@ func PrintData(value any, decode, printHex bool,
 			}
 		}
 	} else {
-		if len(whitelistp) > 0 && !pidInList(data["pid"].(float64), whitelistp) {
-			return
-		} else {
-			if pidInList(data["pid"].(float64), blacklistp) {
+		if pid > 0 {
+			if len(whitelistp) > 0 && !pidInList(pid, whitelistp) {
 				return
+			} else {
+				if pidInList(pid, blacklistp) {
+					return
+				}
 			}
 		}
 	}
