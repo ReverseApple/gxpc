@@ -6,11 +6,11 @@ gxpc recursively parses types of `xpc_object_t` as well as unmarshalling the dat
 
 # Installation
 
-Download one of the prebuilt binaries for macOS(x86_64 or arm64) from [here](https://github.com/nsecho/gxpc/releases) 
+Download one of the prebuilt binaries for macOS(x86_64 or arm64) from [here](https://github.com/ReverseApple/gxpc/releases) 
 or do it manually as described below. 
 
 * Follow the instructions for devkit documented [here](https://github.com/frida/frida-go)
-* Run `go install github.com/nsecho/gxpc@latest`
+* Run `go install github.com/ReverseApple/gxpc@latest`
 
 # Usage
 

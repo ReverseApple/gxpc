@@ -1,7 +1,7 @@
 package lexer
 
 import (
-	"github.com/nsecho/gxpc/internal/token"
+	"github.com/ReverseApple/gxpc/internal/token"
 	"unicode"
 )
 
