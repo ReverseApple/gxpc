@@ -1,4 +1,4 @@
-module github.com/nsecho/gxpc
+module github.com/ReverseApple/gxpc
 
 go 1.20
 
