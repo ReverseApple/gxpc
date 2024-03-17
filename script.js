@@ -93,11 +93,11 @@ function getXPCData(conn, dict, buff, n) {
     if (hdr == "bplist15") {
         const plist = CFBinaryPlistCreate15(buff, n, NULL);
         return ObjC.Object(plist).description().toString();
-    } else if (hdr == "bplist17") {
+    } else if (hdr == "bplist16" || hdr == "bplist17") {
         if (conn != null) {
-            return parseBPList17(conn, dict);
+            return parseBPList(conn, dict);
         } else {
-            return "cannot parse blplist17 for xpc_handler_t";
+            return `cannot parse ${hdr} for xpc_handler_t`;
         }
     } else if (hdr == "bplist00") {
         const format = Memory.alloc(8);
@@ -132,11 +132,13 @@ function getKeys(description) {
 }
 
 // https://github.com/nst/iOS-Runtime-Headers/blob/master/Frameworks/Foundation.framework/NSXPCDecoder.h
-function parseBPList17(conn, dict) {
+function parseBPList(conn, dict) {
     var decoder = NSXPCDecoder.alloc().init();
     decoder["- set_connection:"](conn);
     decoder["- _startReadingFromXPCObject:"](dict);
-    return decoder.debugDescription().toString();
+    var debugDescription = decoder.debugDescription();
+    decoder.dealloc();
+    return debugDescription.toString();
 }
 
 function extract(conn, xpc_object, dict) {
