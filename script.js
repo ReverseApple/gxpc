@@ -49,13 +49,6 @@ function getFunc(name, ret_type, args) {
     return new NativeFunction(Module.getExportByName(null, name), ret_type, args);
 }
 
-// get value type name from xpc_object_t
-function getValueTypeName(val) {
-    var valueType = xpc_get_type(val);
-    var name = xpc_type_get_name(valueType);
-    return Memory.readCString(name);
-}
-
 // create C string from JavaScript string
 function cstr(str) {
     return Memory.allocUtf8String(str);
@@ -64,6 +57,13 @@ function cstr(str) {
 // get JavaScript string from C string
 function rcstr(cstr) {
     return Memory.readCString(cstr);
+}
+
+// get value type name from xpc_object_t
+function getValueTypeName(val) {
+    var valueType = xpc_get_type(val);
+    var name = xpc_type_get_name(valueType);
+    return rcstr(name);
 }
 
 // get C string from XPC string
