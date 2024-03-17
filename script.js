@@ -8,12 +8,12 @@ const {
 } = ObjC.classes;
 
 // Intercept these functions
-const xpc_connection_send_notification = Module.findExportByName(LIBXPC_PATH, "xpc_connection_send_notification");
-const xpc_connection_send_message = Module.findExportByName(LIBXPC_PATH, "xpc_connection_send_message");
-const xpc_connection_send_message_with_reply = Module.findExportByName(LIBXPC_PATH, "xpc_connection_send_message_with_reply");
-const xpc_connection_send_message_with_reply_sync = Module.findExportByName(LIBXPC_PATH, "xpc_connection_send_message_with_reply_sync");
-const xpc_connection_create_mach_service = Module.findExportByName(LIBXPC_PATH, "xpc_connection_create_mach_service");
-const xpc_connection_set_event_handler = Module.findExportByName(LIBXPC_PATH, "xpc_connection_set_event_handler");
+const xpc_connection_send_notification = Module.getExportByName(LIBXPC_PATH, "xpc_connection_send_notification");
+const xpc_connection_send_message = Module.getExportByName(LIBXPC_PATH, "xpc_connection_send_message");
+const xpc_connection_send_message_with_reply = Module.getExportByName(LIBXPC_PATH, "xpc_connection_send_message_with_reply");
+const xpc_connection_send_message_with_reply_sync = Module.getExportByName(LIBXPC_PATH, "xpc_connection_send_message_with_reply_sync");
+const xpc_connection_create_mach_service = Module.getExportByName(LIBXPC_PATH, "xpc_connection_create_mach_service");
+const xpc_connection_set_event_handler = Module.getExportByName(LIBXPC_PATH, "xpc_connection_set_event_handler");
 
 const __CFBinaryPlistCreate15 = DebugSymbol.fromName('__CFBinaryPlistCreate15').address;
 const _xpc_connection_call_event_handler = DebugSymbol.fromName("_xpc_connection_call_event_handler").address;
@@ -46,7 +46,7 @@ const xpc_connection_get_pid = getFunc("xpc_connection_get_pid", "int", ["pointe
 
 // helper function that will create new NativeFunction
 function getFunc(name, ret_type, args) {
-    return new NativeFunction(Module.findExportByName(null, name), ret_type, args);
+    return new NativeFunction(Module.getExportByName(null, name), ret_type, args);
 }
 
 // get value type name from xpc_object_t
