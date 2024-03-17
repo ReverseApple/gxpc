@@ -23,7 +23,6 @@ const xpc_connection_call_event_handler = new NativeFunction(_xpc_connection_cal
 // Use these functions to make sense out of xpc_object_t and xpc_connection_t
 const xpc_connection_get_name = getFunc("xpc_connection_get_name", "pointer", ["pointer"]);
 const xpc_get_type = getFunc("xpc_get_type", "pointer", ["pointer"]);
-const xpc_type_get_name = getFunc("xpc_type_get_name", "pointer", ["pointer"]);
 const xpc_dictionary_get_value = getFunc("xpc_dictionary_get_value", "pointer", ["pointer", "pointer"]);
 const xpc_string_get_string_ptr = getFunc("xpc_string_get_string_ptr", "pointer", ["pointer"]);
 const xpc_copy_description = getFunc("xpc_copy_description", "pointer", ["pointer"]);
@@ -44,9 +43,42 @@ const xpc_date_get_value = getFunc("xpc_date_get_value", "int64", ["pointer"]);
 
 const xpc_connection_get_pid = getFunc("xpc_connection_get_pid", "int", ["pointer"]);
 
+const xpc_type_activity = getPtr("_xpc_type_activity");
+const xpc_type_array = getPtr("_xpc_type_array");
+const xpc_type_base = getPtr("_xpc_type_base");
+const xpc_type_bool = getPtr("_xpc_type_bool");
+const xpc_type_bundle = getPtr("_xpc_type_bundle");
+const xpc_type_connection = getPtr("_xpc_type_connection");
+const xpc_type_data = getPtr("_xpc_type_data");
+const xpc_type_date = getPtr("_xpc_type_date");
+const xpc_type_dictionary = getPtr("_xpc_type_dictionary");
+const xpc_type_double = getPtr("_xpc_type_double");
+const xpc_type_endpoint = getPtr("_xpc_type_endpoint");
+const xpc_type_error = getPtr("_xpc_type_error");
+const xpc_type_fd = getPtr("_xpc_type_fd");
+const xpc_type_file_transfer = getPtr("_xpc_type_file_transfer");
+const xpc_type_int64 = getPtr("_xpc_type_int64");
+const xpc_type_mach_recv = getPtr("_xpc_type_mach_recv");
+const xpc_type_mach_send = getPtr("_xpc_type_mach_send");
+const xpc_type_null = getPtr("_xpc_type_null");
+const xpc_type_pipe = getPtr("_xpc_type_pipe");
+const xpc_type_pointer = getPtr("_xpc_type_pointer");
+const xpc_type_serializer = getPtr("_xpc_type_serializer");
+const xpc_type_service = getPtr("_xpc_type_service");
+const xpc_type_service_instance = getPtr("_xpc_type_service_instance");
+const xpc_type_shmem = getPtr("_xpc_type_shmem");
+const xpc_type_string = getPtr("_xpc_type_string");
+const xpc_type_uint64 = getPtr("_xpc_type_uint64");
+const xpc_type_uuid = getPtr("_xpc_type_uuid");
+
 // helper function that will create new NativeFunction
 function getFunc(name, ret_type, args) {
     return new NativeFunction(Module.getExportByName(null, name), ret_type, args);
+}
+
+// helper function that will create new NativePointer
+function getPtr(name) {
+    return new NativePointer(Module.getExportByName(null, name));
 }
 
 // create C string from JavaScript string
@@ -62,8 +94,61 @@ function rcstr(cstr) {
 // get value type name from xpc_object_t
 function getValueTypeName(val) {
     var valueType = xpc_get_type(val);
-    var name = xpc_type_get_name(valueType);
-    return rcstr(name);
+    if (xpc_type_activity.equals(valueType))
+        return "activity";
+    if (xpc_type_array.equals(valueType))
+        return "array";
+    if (xpc_type_base.equals(valueType))
+        return "base";
+    if (xpc_type_bool.equals(valueType))
+        return "bool";
+    if (xpc_type_bundle.equals(valueType))
+        return "bundle";
+    if (xpc_type_connection.equals(valueType))
+        return "connection";
+    if (xpc_type_data.equals(valueType))
+        return "data";
+    if (xpc_type_date.equals(valueType))
+        return "date";
+    if (xpc_type_dictionary.equals(valueType))
+        return "dictionary";
+    if (xpc_type_double.equals(valueType))
+        return "double";
+    if (xpc_type_endpoint.equals(valueType))
+        return "endpoint";
+    if (xpc_type_error.equals(valueType))
+        return "error";
+    if (xpc_type_fd.equals(valueType))
+        return "fd";
+    if (xpc_type_file_transfer.equals(valueType))
+        return "file_transfer";
+    if (xpc_type_int64.equals(valueType))
+        return "int64";
+    if (xpc_type_mach_recv.equals(valueType))
+        return "mach_recv";
+    if (xpc_type_mach_send.equals(valueType))
+        return "mach_send";
+    if (xpc_type_null.equals(valueType))
+        return "null";
+    if (xpc_type_pipe.equals(valueType))
+        return "pipe";
+    if (xpc_type_pointer.equals(valueType))
+        return "pointer";
+    if (xpc_type_serializer.equals(valueType))
+        return "serializer";
+    if (xpc_type_service.equals(valueType))
+        return "service";
+    if (xpc_type_service_instance.equals(valueType))
+        return "service_instance";
+    if (xpc_type_shmem.equals(valueType))
+        return "shmem";
+    if (xpc_type_string.equals(valueType))
+        return "string";
+    if (xpc_type_uint64.equals(valueType))
+        return "uint64";
+    if (xpc_type_uuid.equals(valueType))
+        return "uuid";
+    return null;
 }
 
 // get C string from XPC string
