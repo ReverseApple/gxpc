@@ -178,11 +178,32 @@ function getXPCData(conn, dict, buff, n) {
     if (hdr == "bplist15") {
         const plist = CFBinaryPlistCreate15(buff, n, NULL);
         return ObjC.Object(plist).description().toString();
-    } else if (hdr == "bplist16" || hdr == "bplist17") {
+    } else if (hdr == "bplist16") {
+        var ObjCData = NSData.dataWithBytes_length_(buff, n);
+        var base64Encoded = ObjCData.base64EncodedStringWithOptions_(0).toString();
+
+        send(JSON.stringify({
+            "type": "jlutil",
+            "payload": base64Encoded,
+        }));
+
+        var resp;
+        recv("jlutil", (message, _) => {
+            resp = message.payload;
+        })
+            .wait();
+        if (resp) {
+            return resp;
+        }
+
         if (conn != null) {
             return parseBPList(conn, dict);
-        } else {
-            return `cannot parse ${hdr} for xpc_handler_t`;
+        }
+
+        return base64Encoded;
+    } else if (hdr == "bplist17") {
+        if (conn != null) {
+            return parseBPList(conn, dict);
         }
     } else if (hdr == "bplist00") {
         const format = Memory.alloc(8);
@@ -190,11 +211,11 @@ function getXPCData(conn, dict, buff, n) {
         var ObjCData = NSData.dataWithBytes_length_(buff, n);
         const plist = NSPropertyListSerialization.propertyListWithData_options_format_error_(ObjCData, 0, format, NULL);
         return ObjC.Object(plist).description().toString();
-    } else {
-        var ObjCData = NSData.dataWithBytes_length_(buff, n);
-        var base64Encoded = ObjCData.base64EncodedStringWithOptions_(0).toString();
-        return base64Encoded;
     }
+
+    var ObjCData = NSData.dataWithBytes_length_(buff, n);
+    var base64Encoded = ObjCData.base64EncodedStringWithOptions_(0).toString();
+    return base64Encoded;
 }
 
 function getKeys(description) {
@@ -297,7 +318,7 @@ var ps = new NativeCallback((fnName, conn, dict) => {
     } else {
         ret["dictionary"] = extract(conn, dict, dict);
     }
-    send(JSON.stringify(ret));
+    send(JSON.stringify({"type": "print", "payload": ret}));
 }, "void", ["pointer", "pointer", "pointer"]);
 
 var cm_notification = new CModule(`
@@ -393,6 +414,6 @@ Interceptor.attach(xpc_connection_create_mach_service, {
         ret["dictionary"] = {
             "Service name": rcstr(args[0])
         };
-        send(JSON.stringify(ret));
+        send(JSON.stringify({"type": "print", "payload": ret}));
     },
 })
