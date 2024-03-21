@@ -2,10 +2,13 @@ package main
 
 import (
 	_ "embed"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"github.com/frida/frida-go/frida"
 	"github.com/spf13/cobra"
 	"os"
+	"os/exec"
 	"os/signal"
 	"regexp"
 	"strings"
@@ -221,14 +224,37 @@ var rootCmd = &cobra.Command{
 			msg, _ := frida.ScriptMessageToMessage(message)
 			switch msg.Type {
 			case frida.MessageTypeSend:
-				PrintData(msg.Payload,
-					false,
-					false,
-					listToRegex(whitelist),
-					listToRegex(blacklist),
-					listToRegex(whitelistp),
-					listToRegex(blacklistp),
-					logger)
+				payload := msg.Payload.(map[string]any)
+
+				subType := payload["type"].(string)
+				subPayload := payload["payload"]
+
+				switch subType {
+				case "print":
+					PrintData(
+						subPayload,
+						false,
+						false,
+						listToRegex(whitelist),
+						listToRegex(blacklist),
+						listToRegex(whitelistp),
+						listToRegex(blacklistp),
+						logger,
+					)
+
+				case "jlutil":
+					resPayload, err := jlutil(subPayload.(string))
+					if err != nil {
+						logger.Errorf("jlutil: %v", err)
+					}
+
+					msg := fmt.Sprintf(`{"type":"jlutil","payload":"%s"}`, resPayload)
+					script.Post(msg, nil)
+
+				default:
+					logger.Warnf("SCRIPT: %v", msg)
+				}
+
 			case frida.MessageTypeLog:
 				logger.Infof("SCRIPT: %v", msg)
 			default:
@@ -267,6 +293,37 @@ var rootCmd = &cobra.Command{
 			logger.Infof("Exiting...")
 		}
 	},
+}
+
+func jlutil(payload string) (string, error) {
+	decodedPayload, err := base64.StdEncoding.DecodeString(payload)
+	if err != nil {
+		return "", err
+	}
+
+	f, err := os.CreateTemp(os.TempDir(), "")
+	if err != nil {
+		return "", err
+	}
+	defer os.Remove(f.Name())
+	if _, err := f.Write(decodedPayload); err != nil {
+		return "", err
+	}
+	if err := f.Close(); err != nil {
+		return "", err
+	}
+
+	output, err := exec.Command("jlutil", f.Name()).CombinedOutput()
+	if err != nil {
+		return "", err
+	}
+
+	encodedOutput, err := json.Marshal(string(output))
+	if err != nil {
+		return "", err
+	}
+
+	return string(encodedOutput[1 : len(encodedOutput)-1]), nil
 }
 
 func listToRegex(ls []string) []*regexp.Regexp {
