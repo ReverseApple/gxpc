@@ -1,8 +1,8 @@
 github.com/cpuguy83/go-md2man/v2 v2.0.3/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
 github.com/fatih/color v1.15.0 h1:kOqh6YHBtK8aywxGerMG2Eq3H6Qgoqeo13Bk2Mv/nBs=
 github.com/fatih/color v1.15.0/go.mod h1:0h5ZqXfHYED7Bhv2ZJamyIOUej9KtShiJESRwBDUSsw=
-github.com/frida/frida-go v0.6.8 h1:THQoyDk5ka2xVaOyy2JgJi3t5I3wnKZKGbDcVC9Nh24=
-github.com/frida/frida-go v0.6.8/go.mod h1:OyRIp58wuTcGggI6ztakXcHkTXrt5WfD9yi3pq6QyGw=
+github.com/frida/frida-go v0.7.2 h1:O3xR5K/wN8IrWpYbnxFUk6DFwue4t+udBmFfIwSkSl0=
+github.com/frida/frida-go v0.7.2/go.mod h1:OyRIp58wuTcGggI6ztakXcHkTXrt5WfD9yi3pq6QyGw=
 github.com/google/uuid v1.3.0 h1:t6JiXgmwXMjEs8VusXIJk2BXHsn+wx8BZdTaoZ5fu7I=
 github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
