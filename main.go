@@ -95,7 +95,7 @@ var rootCmd = &cobra.Command{
 		for _, d := range devices {
 			if id != "" {
 				if d.ID() == id {
-					dev = d
+					dev = d.(*frida.Device)
 					break
 				}
 			} else if remote != "" {
@@ -104,7 +104,7 @@ var rootCmd = &cobra.Command{
 					logger.Errorf("%v", err)
 					return
 				}
-				dev = rdevice
+				dev = rdevice.(*frida.Device)
 				break
 			} else {
 				dev = frida.USBDevice()
