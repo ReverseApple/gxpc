@@ -1,14 +1,8 @@
 github.com/cpuguy83/go-md2man/v2 v2.0.3/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
 github.com/fatih/color v1.17.0 h1:GlRw1BRJxkpqUCBKzKOw098ed57fEsKeNjpTe3cSjK4=
 github.com/fatih/color v1.17.0/go.mod h1:YZ7TlrGPkiz6ku9fK3TLD/pl3CpsiFyu8N92HLgmosI=
-github.com/frida/frida-go v0.7.2 h1:O3xR5K/wN8IrWpYbnxFUk6DFwue4t+udBmFfIwSkSl0=
-github.com/frida/frida-go v0.7.2/go.mod h1:OyRIp58wuTcGggI6ztakXcHkTXrt5WfD9yi3pq6QyGw=
-github.com/frida/frida-go v0.9.0 h1:+aUWHEpRD502FFQgUjqry9eRXt0F8OdWg8YcF7t5JAE=
-github.com/frida/frida-go v0.9.0/go.mod h1:OyRIp58wuTcGggI6ztakXcHkTXrt5WfD9yi3pq6QyGw=
-github.com/frida/frida-go v0.9.1 h1:F7H3s4ro1BKahD+FOYXrRH/95I717UVB4ZJQsAbJ+I8=
-github.com/frida/frida-go v0.9.1/go.mod h1:OyRIp58wuTcGggI6ztakXcHkTXrt5WfD9yi3pq6QyGw=
-github.com/google/uuid v1.3.0 h1:t6JiXgmwXMjEs8VusXIJk2BXHsn+wx8BZdTaoZ5fu7I=
-github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
+github.com/frida/frida-go v0.10.1 h1:1Jmg5yQQ0mgkgCn4CuQQIAGrlkD0ZgnOJx3lU+v8ryY=
+github.com/frida/frida-go v0.10.1/go.mod h1:OyRIp58wuTcGggI6ztakXcHkTXrt5WfD9yi3pq6QyGw=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
