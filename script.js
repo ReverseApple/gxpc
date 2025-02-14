@@ -72,15 +72,13 @@ const xpc_type_uint64 = getPtr("_xpc_type_uint64");
 const xpc_type_uuid = getPtr("_xpc_type_uuid");
 
 // check which version of decoder we have
-var NSXPCDecoderDecodeMethod = null;
+var NSXPCDecoderDecodeMethod = "old"
 var connResult = null;
 
 var decoder = NSXPCDecoder.alloc().init();
 
 if ((connResult = decoder["- setConnection:"]) != null) {
     NSXPCDecoderDecodeMethod = "new";
-} else {
-    NSXPCDecoderDecodeMethod = "old";
 }
 
 // helper function that will create new NativeFunction
