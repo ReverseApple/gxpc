@@ -71,16 +71,6 @@ const xpc_type_string = getPtr("_xpc_type_string");
 const xpc_type_uint64 = getPtr("_xpc_type_uint64");
 const xpc_type_uuid = getPtr("_xpc_type_uuid");
 
-// check which version of decoder we have
-var NSXPCDecoderDecodeMethod = "old"
-var connResult = null;
-
-var decoder = NSXPCDecoder.alloc().init();
-
-if ((connResult = decoder["- setConnection:"]) != null) {
-    NSXPCDecoderDecodeMethod = "new";
-}
-
 // helper function that will create new NativeFunction
 function getFunc(name, ret_type, args) {
     return new NativeFunction(Module.getExportByName(null, name), ret_type, args);
@@ -250,10 +240,10 @@ function getKeys(description) {
 // https://github.com/nst/iOS-Runtime-Headers/blob/master/Frameworks/Foundation.framework/NSXPCDecoder.h
 function parseBPList(conn, dict) {
     var decoder = NSXPCDecoder.alloc().init();
-    if (NSXPCDecoderDecodeMethod == "old") {
+    try {
+        decoder["- _setConnection:"](conn);
+    } catch (err) {
         decoder["- set_connection:"](conn);
-    } else {
-        decoder["- setConnection:"](conn);
     }
     decoder["- _startReadingFromXPCObject:"](dict);
     var debugDescription = decoder.debugDescription();
