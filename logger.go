@@ -46,7 +46,10 @@ func (l *Logger) SetOutput(output string) error {
 }
 
 func (l *Logger) Close() error {
-	return l.f.Close()
+	if l.f != nil {
+		return l.f.Close()
+	}
+	return nil
 }
 
 func (l *Logger) Infof(format string, args ...any) {

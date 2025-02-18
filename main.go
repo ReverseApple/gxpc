@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/frida/frida-go/frida"
 	"github.com/spf13/cobra"
@@ -21,23 +22,24 @@ var scContent string
 
 var Version string
 
+var logger *Logger = nil
+
 var rootCmd = &cobra.Command{
-	Use:     "gxpc [spawn_args]",
-	Short:   "XPC sniffer",
-	Version: Version,
-	Run: func(cmd *cobra.Command, args []string) {
-		logger := NewLogger()
+	Use:           "gxpc [spawn_args]",
+	Short:         "XPC sniffer",
+	Version:       Version,
+	SilenceErrors: true,
+	SilenceUsage:  true,
+	RunE: func(cmd *cobra.Command, args []string) error {
 
 		initConfig, err := cmd.Flags().GetBool("init")
 		if err != nil {
-			logger.Errorf("%v", err)
-			return
+			return err
 		}
 
 		config, err := cmd.Flags().GetString("config")
 		if err != nil {
-			logger.Errorf("%v", err)
-			return
+			return err
 		}
 
 		if config == "" {
@@ -50,14 +52,16 @@ var rootCmd = &cobra.Command{
 				Offsets: []Offset{
 					{
 						OS: "iPhone14,7",
-						Builds: map[string]BuildData{
-							"20B110": {PlistCreate: "0xb1c00", CallHandler: "0x11c00"},
+						Builds: []map[string]BuildData{
+							{
+								"20B110": {PlistCreate: "0xb1c00", CallHandler: "0x11c00"},
+							},
 						},
 					},
 					{
 						OS: "iPad7,11",
-						Builds: map[string]BuildData{
-							"22B83": {PlistCreate: "0x7dbf4", CallHandler: "0xf98c"},
+						Builds: []map[string]BuildData{
+							{"22B83": {PlistCreate: "0x7dbf4", CallHandler: "0xf98c"}},
 						},
 					},
 				},
@@ -65,8 +69,7 @@ var rootCmd = &cobra.Command{
 
 			f, err := os.Create(config)
 			if err != nil {
-				logger.Errorf("%v", err)
-				return
+				return err
 			}
 			defer f.Close()
 
@@ -74,64 +77,53 @@ var rootCmd = &cobra.Command{
 			encoder.SetIndent("  ", "    ")
 
 			if err := encoder.Encode(configData); err != nil {
-				logger.Errorf("%v", err)
-				return
+				return err
 			}
 
 			logger.Infof("Created new config at %s", config)
-			return
+			return nil
 		}
 
 		list, err := cmd.Flags().GetBool("list")
 		if err != nil {
-			logger.Errorf("%v", err)
-			return
+			return err
 		}
 
 		id, err := cmd.Flags().GetString("id")
 		if err != nil {
-			logger.Errorf("%v", err)
-			return
+			return err
 		}
 
 		remote, err := cmd.Flags().GetString("remote")
 		if err != nil {
-			logger.Errorf("%v", err)
-			return
+			return err
 		}
 
 		pid, err := cmd.Flags().GetInt("pid")
 		if err != nil {
-			logger.Errorf("%v", err)
-			return
+			return err
 		}
 
 		procName, err := cmd.Flags().GetString("name")
 		if err != nil {
-			logger.Errorf("%v", err)
-			return
+			return err
 		}
 
 		output, err := cmd.Flags().GetString("output")
 		if err != nil {
-			logger.Errorf("%v", err)
-			return
+			return err
 		}
 
 		if output != "" {
 			if err := logger.SetOutput(output); err != nil {
-				logger.Errorf("%v", err)
-				return
+				return err
 			}
 		}
-
-		defer logger.Close()
 
 		mgr := frida.NewDeviceManager()
 		devices, err := mgr.EnumerateDevices()
 		if err != nil {
-			logger.Errorf("%v", err)
-			return
+			return err
 		}
 
 		if list {
@@ -141,7 +133,7 @@ var rootCmd = &cobra.Command{
 					d.Name(),
 					d.ID())
 			}
-			return
+			return nil
 		}
 
 		var dev *frida.Device
@@ -156,8 +148,7 @@ var rootCmd = &cobra.Command{
 			} else if remote != "" {
 				rdevice, err := mgr.AddRemoteDevice(remote, nil)
 				if err != nil {
-					logger.Errorf("%v", err)
-					return
+					return err
 				}
 				dev = rdevice.(*frida.Device)
 				break
@@ -167,8 +158,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		if dev == nil {
-			logger.Errorf("Could not obtain specified device")
-			return
+			return errors.New("could not obtain specified device")
 		}
 		defer dev.Clean()
 		logger.Infof("Using device %s (%s)", dev.Name(), dev.ID())
@@ -178,8 +168,7 @@ var rootCmd = &cobra.Command{
 		if pid == -1 && procName != "" {
 			processes, err := dev.EnumerateProcesses(frida.ScopeMinimal)
 			if err != nil {
-				logger.Errorf("Error enumerating processes: %v", err)
-				return
+				return err
 			}
 
 			for _, proc := range processes {
@@ -192,13 +181,11 @@ var rootCmd = &cobra.Command{
 
 		file, err := cmd.Flags().GetString("file")
 		if err != nil {
-			logger.Errorf("%v", err)
-			return
+			return err
 		}
 
 		if procPid == -1 && file == "" {
-			logger.Errorf("You need to pass pid, name or file to spawn")
-			return
+			return errors.New("missing pid, name or file to spawn")
 		}
 
 		spawned := false
@@ -206,8 +193,7 @@ var rootCmd = &cobra.Command{
 		if procPid != -1 {
 			session, err = dev.Attach(procPid, nil)
 			if err != nil {
-				logger.Errorf("Error attaching: %v", err)
-				return
+				return err
 			}
 		} else {
 			opts := frida.NewSpawnOptions()
@@ -219,14 +205,12 @@ var rootCmd = &cobra.Command{
 			opts.SetArgv(argv)
 			spawnedPID, err := dev.Spawn(file, opts)
 			if err != nil {
-				logger.Errorf("Error spawning %s: %v", file, err)
-				return
+				return err
 			}
 			procPid = spawnedPID
 			session, err = dev.Attach(spawnedPID, nil)
 			if err != nil {
-				logger.Errorf("Error attaching: %v", err)
-				return
+				return err
 			}
 			spawned = true
 		}
@@ -246,33 +230,28 @@ var rootCmd = &cobra.Command{
 
 		script, err := session.CreateScript(scContent)
 		if err != nil {
-			logger.Errorf("Error creating script: %v", err)
-			return
+			return err
 		}
 		defer script.Clean()
 
 		blacklist, err := cmd.Flags().GetStringSlice("blacklist")
 		if err != nil {
-			logger.Errorf("%v", err)
-			return
+			return err
 		}
 
 		whitelist, err := cmd.Flags().GetStringSlice("whitelist")
 		if err != nil {
-			logger.Errorf("%v", err)
-			return
+			return err
 		}
 
 		blacklistp, err := cmd.Flags().GetStringSlice("blacklistp")
 		if err != nil {
-			logger.Errorf("%v", err)
-			return
+			return err
 		}
 
 		whitelistp, err := cmd.Flags().GetStringSlice("whitelist")
 		if err != nil {
-			logger.Errorf("%v", err)
-			return
+			return err
 		}
 
 		script.On("message", func(message string) {
@@ -307,30 +286,46 @@ var rootCmd = &cobra.Command{
 					script.Post(msg, nil)
 
 				default:
-					logger.Warnf("SCRIPT: %v", msg)
+					logger.Warnf("SCRIPT: %v", subPayload)
 				}
 
 			case frida.MessageTypeLog:
-				logger.Infof("SCRIPT: %v", msg)
+				logger.Infof("SCRIPT: %v", msg.Payload.(string))
 			default:
 				logger.Errorf("SCRIPT: %v", msg)
 			}
 		})
 
 		if err := script.Load(); err != nil {
-			logger.Errorf("Error loading script: %v", err)
-			return
+			return err
 		}
 		logger.Infof("Loaded script to the process")
 
 		if spawned {
 			if err := dev.Resume(procPid); err != nil {
-				logger.Errorf("Error resuming: %v", err)
-				return
+				return err
 			} else {
 				logger.Infof("Resumed process")
 			}
 		}
+
+		if config == "" {
+			homeDir, _ := os.UserHomeDir()
+			config = filepath.Join(homeDir, "gxpc.conf")
+		}
+
+		var offsets OffsetsData
+		f, err := os.Open(config)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		if err := json.NewDecoder(f).Decode(&offsets); err != nil {
+			return err
+		}
+
+		_ = script.ExportsCall("setup", offsets)
 
 		c := make(chan os.Signal)
 		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -340,13 +335,13 @@ var rootCmd = &cobra.Command{
 			fmt.Println()
 			logger.Infof("Exiting...")
 			if err := script.Unload(); err != nil {
-				logger.Errorf("Error unloading script: %v", err)
-				return
+				return err
 			}
 			logger.Infof("Script unloaded")
 		case <-detached:
 			logger.Infof("Exiting...")
 		}
+		return nil
 	},
 }
 
@@ -391,7 +386,7 @@ func listToRegex(ls []string) []*regexp.Regexp {
 	return rex
 }
 
-func main() {
+func setupFlags() {
 	rootCmd.Flags().StringP("id", "i", "", "connect to device with ID")
 	rootCmd.Flags().StringP("remote", "r", "", "connect to device at IP address")
 	rootCmd.Flags().StringP("name", "n", "", "process name")
@@ -411,6 +406,14 @@ func main() {
 	//rootCmd.Flags().BoolP("hex", "x", false, "print hexdump of raw data")
 
 	rootCmd.Flags().IntP("pid", "p", -1, "PID of wanted process")
+}
 
-	rootCmd.Execute()
+func main() {
+	setupFlags()
+	logger = NewLogger()
+	defer logger.Close()
+
+	if err := rootCmd.Execute(); err != nil {
+		logger.Errorf("Error ocurred: %v", err)
+	}
 }

@@ -15,10 +15,14 @@ const xpc_connection_send_message_with_reply_sync = Module.getExportByName(LIBXP
 const xpc_connection_create_mach_service = Module.getExportByName(LIBXPC_PATH, "xpc_connection_create_mach_service");
 const xpc_connection_set_event_handler = Module.getExportByName(LIBXPC_PATH, "xpc_connection_set_event_handler");
 
-const __CFBinaryPlistCreate15 = DebugSymbol.fromName('__CFBinaryPlistCreate15').address;
-const _xpc_connection_call_event_handler = DebugSymbol.fromName("_xpc_connection_call_event_handler").address;
-const CFBinaryPlistCreate15 = new NativeFunction(__CFBinaryPlistCreate15, "pointer", ["pointer", "int", "pointer"]);
-const xpc_connection_call_event_handler = new NativeFunction(_xpc_connection_call_event_handler, "void", ["pointer", "pointer"]);
+const sysctlbyname_addr = Module.getExportByName(null, 'sysctlbyname');
+const sysctlbyname = new NativeFunction(sysctlbyname_addr, 'int', ['pointer', 'pointer', 'pointer', 'pointer', 'int']);
+
+var __CFBinaryPlistCreate15;
+var _xpc_connection_call_event_handler;
+var CFBinaryPlistCreate15;
+var xpc_connection_call_event_handler;
+
 
 // Use these functions to make sense out of xpc_object_t and xpc_connection_t
 const xpc_connection_get_name = getFunc("xpc_connection_get_name", "pointer", ["pointer"]);
@@ -402,13 +406,11 @@ var cm_set_event_handler = new CModule(`
     }
 `, {pointerSize: psize, ps});
 
+
 Interceptor.attach(xpc_connection_send_notification, cm_notification);
 Interceptor.attach(xpc_connection_send_message, cm_send_message);
 Interceptor.attach(xpc_connection_send_message_with_reply, cm_send_message_with_reply);
 Interceptor.attach(xpc_connection_send_message_with_reply_sync, cm_send_message_with_reply_sync);
-Interceptor.attach(xpc_connection_call_event_handler, cm_call_event_handler);
-
-Interceptor.attach(xpc_connection_set_event_handler, cm_set_event_handler);
 
 Interceptor.attach(xpc_connection_create_mach_service, {
     onEnter(args) {
@@ -420,4 +422,56 @@ Interceptor.attach(xpc_connection_create_mach_service, {
         };
         send(JSON.stringify({"type": "print", "payload": ret}));
     },
-})
+});
+
+function sysctl(name) {
+    const size = Memory.alloc(0x4);
+    sysctlbyname(Memory.allocUtf8String(name), ptr(0), size, ptr(0), 0);
+    const value = Memory.alloc(size.readU32());
+    sysctlbyname(Memory.allocUtf8String(name), value, size, ptr(0), 0);
+    return value.readCString();
+}
+
+var timerID = setInterval(function() {
+    if (__CFBinaryPlistCreate15 != null && _xpc_connection_call_event_handler != null) {
+        CFBinaryPlistCreate15 = new NativeFunction(__CFBinaryPlistCreate15, "pointer", ["pointer", "int", "pointer"]);
+        xpc_connection_call_event_handler = new NativeFunction(_xpc_connection_call_event_handler, "void", ["pointer", "pointer"]);
+        setImmediate(function() {
+            Interceptor.attach(xpc_connection_call_event_handler, cm_call_event_handler);
+            Interceptor.attach(xpc_connection_set_event_handler, cm_set_event_handler);
+        });
+    }
+}, 1000);
+
+
+rpc.exports = {
+    setup(offsets) {
+        const machine = sysctl("hw.machine");
+        const osversion = sysctl("kern.osversion");
+
+        var found = false;
+
+        for (var i = 0; i < offsets.offsets.length; i++) {
+            var os = offsets.offsets[i].os;
+            if (os == machine) {
+                for (var j = 0; j < offsets.offsets[i].builds.length; j++) {
+                    var build = offsets.offsets[i].builds[j];
+                    if (build == osversion) {
+                        __CFBinaryPlistCreate15 = Module.getBaseAddress('CoreFoundation').add(Number(build.PlistCreate));
+                        _xpc_connection_call_event_handler = Module.getBaseAddress('libxpc.dylib').add(Number(build.CallHandler));
+                        found = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!found) {
+            __CFBinaryPlistCreate15 = DebugSymbol.fromName('__CFBinaryPlistCreate15').address;
+            _xpc_connection_call_event_handler = DebugSymbol.fromName("_xpc_connection_call_event_handler").address;
+        }
+        console.log(`Running on an ${machine}, system version ${osversion}`);
+
+        return null;
+    },
+}

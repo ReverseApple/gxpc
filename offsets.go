@@ -6,8 +6,8 @@ type BuildData struct {
 }
 
 type Offset struct {
-	OS     string               `json:"os"`
-	Builds map[string]BuildData `json:"builds"`
+	OS     string                 `json:"os"`
+	Builds []map[string]BuildData `json:"builds"`
 }
 
 type OffsetsData struct {
