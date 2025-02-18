@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"syscall"
@@ -26,6 +27,60 @@ var rootCmd = &cobra.Command{
 	Version: Version,
 	Run: func(cmd *cobra.Command, args []string) {
 		logger := NewLogger()
+
+		initConfig, err := cmd.Flags().GetBool("init")
+		if err != nil {
+			logger.Errorf("%v", err)
+			return
+		}
+
+		config, err := cmd.Flags().GetString("config")
+		if err != nil {
+			logger.Errorf("%v", err)
+			return
+		}
+
+		if config == "" {
+			homeDir, _ := os.UserHomeDir()
+			config = filepath.Join(homeDir, "gxpc.conf")
+		}
+
+		if initConfig {
+			configData := OffsetsData{
+				Offsets: []Offset{
+					{
+						OS: "iPhone14,7",
+						Builds: map[string]BuildData{
+							"20B110": {PlistCreate: "0xb1c00", CallHandler: "0x11c00"},
+						},
+					},
+					{
+						OS: "iPad7,11",
+						Builds: map[string]BuildData{
+							"22B83": {PlistCreate: "0x7dbf4", CallHandler: "0xf98c"},
+						},
+					},
+				},
+			}
+
+			f, err := os.Create(config)
+			if err != nil {
+				logger.Errorf("%v", err)
+				return
+			}
+			defer f.Close()
+
+			encoder := json.NewEncoder(f)
+			encoder.SetIndent("  ", "    ")
+
+			if err := encoder.Encode(configData); err != nil {
+				logger.Errorf("%v", err)
+				return
+			}
+
+			logger.Infof("Created new config at %s", config)
+			return
+		}
 
 		list, err := cmd.Flags().GetBool("list")
 		if err != nil {
@@ -342,6 +397,9 @@ func main() {
 	rootCmd.Flags().StringP("name", "n", "", "process name")
 	rootCmd.Flags().StringP("file", "f", "", "spawn the file")
 	rootCmd.Flags().StringP("output", "o", "", "save output to this file")
+
+	rootCmd.Flags().StringP("config", "c", "", "path to gxpc.conf file; default user home directory")
+	rootCmd.Flags().BoolP("init", "", false, "create gxpc.conf file with offsets")
 
 	rootCmd.Flags().StringSliceP("whitelist", "w", []string{}, "whitelist connection by name")
 	rootCmd.Flags().StringSliceP("blacklist", "b", []string{}, "blacklist connection by name")
