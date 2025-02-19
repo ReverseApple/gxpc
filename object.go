@@ -66,29 +66,31 @@ func PrintData(value any, decode, printHex bool,
 	var message string
 	fnName := fmt.Sprintf("%d) Name: %s\n", msg, data["name"])
 	connName := fmt.Sprintf("Connection Name: %s\n", data["connName"])
-	printData(reflect.ValueOf(data["dictionary"]), "", "", &message)
-	total := len(fnName) + len(connName) + len(message) + 100
+	if _, ok := data["dictionary"]; ok {
+		printData(reflect.ValueOf(data["dictionary"]), "", "", &message)
+		total := len(fnName) + len(connName) + len(message) + 100
 
-	builder := strings.Builder{}
-	builder.Grow(total)
+		builder := strings.Builder{}
+		builder.Grow(total)
 
-	builder.WriteString(fnName)
-	builder.WriteString(connName)
-	builder.WriteString("Data:\n")
-	builder.WriteString(message)
-	builder.WriteString(fmt.Sprintf("\n%s\n", strings.Repeat("=", 80)))
+		builder.WriteString(fnName)
+		builder.WriteString(connName)
+		builder.WriteString("Data:\n")
+		builder.WriteString(message)
+		builder.WriteString(fmt.Sprintf("\n%s\n", strings.Repeat("=", 80)))
 
-	logger.Scriptf("%d) Name: %s", msg, data["name"])
-	logger.Scriptf("Connection Name: %s", data["connName"])
-	pid, ok := data["pid"].(float64)
-	if ok {
-		logger.Scriptf("PID: %d", int(pid))
+		logger.Scriptf("%d) Name: %s", msg, data["name"])
+		logger.Scriptf("Connection Name: %s", data["connName"])
+		pid, ok := data["pid"].(float64)
+		if ok {
+			logger.Scriptf("PID: %d", int(pid))
+		}
+		logger.Scriptf("Data:")
+		logger.Scriptf("%s", message)
+		fmt.Println(strings.Repeat("=", 80))
+
+		logger.writeToFileScript(builder.String())
 	}
-	logger.Scriptf("Data:")
-	logger.Scriptf("%s", message)
-	fmt.Println(strings.Repeat("=", 80))
-
-	logger.writeToFileScript(builder.String())
 }
 
 func printData(v reflect.Value, key, indent string, message *string) {
