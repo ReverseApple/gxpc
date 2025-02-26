@@ -451,16 +451,18 @@ rpc.exports = {
 
         var found = false;
 
-        for (var i = 0; i < offsets.offsets.length; i++) {
-            var os = offsets.offsets[i].os;
-            if (os == machine) {
-                for (var j = 0; j < offsets.offsets[i].builds.length; j++) {
-                    var build = offsets.offsets[i].builds[j];
-                    if (build == osversion) {
-                        __CFBinaryPlistCreate15 = Module.getBaseAddress('CoreFoundation').add(Number(build.PlistCreate));
-                        _xpc_connection_call_event_handler = Module.getBaseAddress('libxpc.dylib').add(Number(build.CallHandler));
-                        found = true;
-                        break;
+        if (offsets != null) {
+            for (var i = 0; i < offsets.offsets.length; i++) {
+                var os = offsets.offsets[i].os;
+                if (os == machine) {
+                    for (var j = 0; j < offsets.offsets[i].builds.length; j++) {
+                        var build = offsets.offsets[i].builds[j];
+                        if (build == osversion) {
+                            __CFBinaryPlistCreate15 = Module.getBaseAddress('CoreFoundation').add(Number(build.PlistCreate));
+                            _xpc_connection_call_event_handler = Module.getBaseAddress('libxpc.dylib').add(Number(build.CallHandler));
+                            found = true;
+                            break;
+                        }
                     }
                 }
             }
@@ -469,8 +471,15 @@ rpc.exports = {
         if (!found) {
             __CFBinaryPlistCreate15 = DebugSymbol.fromName('__CFBinaryPlistCreate15').address;
             _xpc_connection_call_event_handler = DebugSymbol.fromName("_xpc_connection_call_event_handler").address;
+
+            send(JSON.stringify({
+                "type": "newOffset",
+                "machine": machine,
+                "version": osversion,
+                "plistCreate": ptr(__CFBinaryPlistCreate15 - Module.getBaseAddress('CoreFoundation')),
+                "callEvent": ptr(_xpc_connection_call_event_handler - Module.getBaseAddress('libxpc.dylib'))
+            }));
         }
-        console.log(`Running on an ${machine}, system version ${osversion}`);
 
         return null;
     },
