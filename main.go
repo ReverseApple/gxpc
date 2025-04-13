@@ -6,15 +6,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/frida/frida-go/frida"
-	"github.com/spf13/cobra"
 	"os"
 	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"syscall"
+
+	"github.com/frida/frida-go/frida"
+	"github.com/spf13/cobra"
 )
 
 const (
@@ -87,6 +89,11 @@ var rootCmd = &cobra.Command{
 			return err
 		}
 
+		spawnGate, err := cmd.Flags().GetString("spawn")
+		if err != nil {
+			return err
+		}
+
 		if output != "" {
 			if err := logger.SetOutput(output); err != nil {
 				return err
@@ -130,11 +137,32 @@ var rootCmd = &cobra.Command{
 			}
 		}
 
+		/*
+			Because the signal handler is broken, we deactivate spawn gating when not used
+		*/
+
 		if dev == nil {
 			return errors.New("could not obtain specified device")
 		}
 		defer dev.Clean()
 		logger.Infof("Using device %s (%s)", dev.Name(), dev.ID())
+
+		file, err := cmd.Flags().GetString("file")
+		if err != nil {
+			return err
+		}
+
+		if spawnGate != "" {
+			if err := dev.EnableSpawnGating(); err != nil {
+				return err
+			}
+			logger.Infof("Enable spawn gating")
+		} else {
+			if err := dev.DisableSpawnGating(); err != nil {
+				return err
+			}
+			logger.Infof("Disable spawn gating")
+		}
 
 		procPid := pid
 
@@ -152,12 +180,7 @@ var rootCmd = &cobra.Command{
 			}
 		}
 
-		file, err := cmd.Flags().GetString("file")
-		if err != nil {
-			return err
-		}
-
-		if procPid == -1 && file == "" {
+		if procPid == -1 && file == "" && spawnGate == "" {
 			return errors.New("missing pid, name or file to spawn")
 		}
 
@@ -168,6 +191,32 @@ var rootCmd = &cobra.Command{
 			if err != nil {
 				return err
 			}
+		} else if spawnGate != "" {
+			lock := sync.Mutex{}
+			lock.Lock()
+
+			dev.On("spawn_added", func(spawn *frida.Spawn) {
+				logger.Infof("%d", spawn.PID())
+				if spawn.Identifier() == spawnGate {
+					procPid = spawn.PID()
+					lock.Unlock()
+				} else {
+					logger.Infof("Ignore Spawn(pid=%d, identifier=%s)", spawn.PID(), spawn.Identifier())
+				}
+				spawn.Clean()
+			})
+			lock.Lock()
+
+			session, err = dev.Attach(procPid, nil)
+
+			if err != nil {
+				return err
+			}
+
+			if err := dev.DisableSpawnGating(); err != nil {
+				return err
+			}
+
 		} else {
 			opts := frida.NewSpawnOptions()
 			argv := make([]string, len(args)+1)
@@ -191,7 +240,7 @@ var rootCmd = &cobra.Command{
 
 		logger.Infof("Attached to the process with PID => %d", procPid)
 
-		detached := make(chan struct{})
+		detached := make(chan struct{}, 1)
 
 		session.On("detached", func(reason frida.SessionDetachReason, crash *frida.Crash) {
 			logger.Errorf("Session detached: %s: %v", reason.String(), crash)
@@ -379,7 +428,7 @@ var rootCmd = &cobra.Command{
 
 		logger.Infof("Finished setup")
 
-		c := make(chan os.Signal)
+		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
 		select {
@@ -444,6 +493,7 @@ func setupFlags() {
 	rootCmd.Flags().StringP("name", "n", "", "process name")
 	rootCmd.Flags().StringP("file", "f", "", "spawn the file")
 	rootCmd.Flags().StringP("output", "o", "", "save output to this file")
+	rootCmd.Flags().StringP("spawn", "W", "", "spawn gate")
 
 	rootCmd.Flags().StringP("config", "c", "", "path to gxpc.conf file; default user home directory")
 
