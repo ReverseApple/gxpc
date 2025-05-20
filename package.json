@@ -1,0 +1,26 @@
+{
+  "name": "gxpc",
+  "version": "1.0.0",
+  "description": "Tool inspired by [xpcspy](https://github.com/hot3eed/xpcspy) tool to monitor XPC traffic.",
+  "main": "aa.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ReverseApple/gxpc.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ReverseApple/gxpc/issues"
+  },
+  "homepage": "https://github.com/ReverseApple/gxpc#readme",
+  "dependencies": {
+    "frida-objc-bridge": "^8.0.4"
+  },
+  "devDependencies": {
+    "@types/frida-gum": "^19.0.0",
+    "frida-compile": "^16.4.2"
+  }
+}
