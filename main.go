@@ -17,7 +17,7 @@ import (
 	"syscall"
 )
 
-//go:embed script.js
+//go:embed _agent.js
 var scContent string
 
 var Version string
@@ -300,6 +300,8 @@ var rootCmd = &cobra.Command{
 			}
 			_ = script.ExportsCall("setup", offsets)
 		}
+
+		logger.Infof("Finished setup")
 
 		c := make(chan os.Signal)
 		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
