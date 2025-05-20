@@ -2,7 +2,7 @@
   "name": "gxpc",
   "version": "1.0.0",
   "description": "Tool inspired by [xpcspy](https://github.com/hot3eed/xpcspy) tool to monitor XPC traffic.",
-  "main": "aa.ts",
+  "main": "script.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

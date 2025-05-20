@@ -465,14 +465,14 @@ rpc.exports = {
             for (var i = 0; i < offsets.offsets.length; i++) {
                 var os = offsets.offsets[i].os;
                 if (os == machine) {
-                    console.log("machine is", os, "for build", osversion, offsets.offsets[i].builds.length);
                     for (var j = 0; j < offsets.offsets[i].builds.length; j++) {
-                        console.log("checking", offsets.offsets[i].builds[j]);
-                        var build = offsets.offsets[i].builds[j];
+                        let buildData = offsets.offsets[i].builds[j];
+                        let build = Object.keys(buildData)[0];
                         if (build == osversion) {
-                            console.log("build is", build);
-                            __CFBinaryPlistCreate15 = Process.getModuleByName('CoreFoundation').base.add(Number(build.PlistCreate));
-                            _xpc_connection_call_event_handler = Process.getModuleByName('libxpc.dylib').base.add(Number(build.CallHandler));
+                            let plistCreate = buildData[build]["PlistCreate"];
+                            let callHandler = buildData[build]["CallHandler"];
+                            __CFBinaryPlistCreate15 = Process.getModuleByName('CoreFoundation').base.add(Number(plistCreate));
+                            _xpc_connection_call_event_handler = Process.getModuleByName('libxpc.dylib').base.add(Number(callHandler));
                             found = true;
                             break;
                         }
@@ -480,8 +480,6 @@ rpc.exports = {
                 }
             }
         }
-
-        console.log("found match", found);
 
         if (!found) {
             __CFBinaryPlistCreate15 = DebugSymbol.fromName('__CFBinaryPlistCreate15').address;
