@@ -17,8 +17,20 @@ import (
 	"syscall"
 )
 
-//go:embed _agent.js
-var scContent string
+//go:embed script.ts
+var scriptContent []byte
+
+//go:embed package.json
+var packageJSON []byte
+
+//go:embed package-lock.json
+var packageLockJSON []byte
+
+var tempFiles = map[string][]byte{
+	"script.ts":         scriptContent,
+	"package.json":      packageJSON,
+	"package-lock.json": packageLockJSON,
+}
 
 var Version string
 
@@ -185,7 +197,41 @@ var rootCmd = &cobra.Command{
 			detached <- struct{}{}
 		})
 
-		script, err := session.CreateScript(scContent)
+		// Create temp files
+		tempDir := filepath.Join(os.TempDir(), "gxpc")
+
+		os.MkdirAll(tempDir, os.ModePerm)
+
+		if _, err = os.Stat(filepath.Join(tempDir, "node_modules")); os.IsNotExist(err) {
+			// Install modules
+			command := exec.Command("npm", "install")
+			if err := command.Run(); err != nil {
+				logger.Errorf("Error installing modules: %v", err)
+			}
+		}
+
+		for fl, data := range tempFiles {
+			os.WriteFile(filepath.Join(tempDir, fl), data, os.ModePerm)
+		}
+
+		currentDir, _ := os.Getwd()
+
+		os.Chdir(tempDir)
+
+		comp := frida.NewCompiler()
+
+		comp.On("finished", func() {
+			logger.Infof("Done compiling script")
+		})
+
+		bundle, err := comp.Build("script.ts")
+		if err != nil {
+			logger.Errorf("Error compiling script: %v", err)
+		}
+
+		os.Chdir(currentDir)
+
+		script, err := session.CreateScript(bundle)
 		if err != nil {
 			return err
 		}

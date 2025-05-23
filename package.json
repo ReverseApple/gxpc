@@ -1,0 +1,14 @@
+{
+  "name": "gxpc",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "frida-objc-bridge": "^8.0.4"
+  }
+}

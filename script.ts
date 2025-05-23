@@ -21,10 +21,10 @@ const xpc_connection_set_event_handler = libxpc_dylib.getExportByName("xpc_conne
 const sysctlbyname_addr = Module.getGlobalExportByName('sysctlbyname');
 const sysctlbyname = new NativeFunction(sysctlbyname_addr, 'int', ['pointer', 'pointer', 'pointer', 'pointer', 'int']);
 
-var __CFBinaryPlistCreate15: NativePointer;
-var _xpc_connection_call_event_handler: NativePointer;
-var CFBinaryPlistCreate15: NativeFunction<any, any>;
-var xpc_connection_call_event_handler: NativeFunction<any, any>;
+let __CFBinaryPlistCreate15: NativePointer;
+let _xpc_connection_call_event_handler: NativePointer;
+let CFBinaryPlistCreate15: NativeFunction<any, any>;
+let xpc_connection_call_event_handler: NativeFunction<any, any>;
 
 
 // Use these functions to make sense out of xpc_object_t and xpc_connection_t
@@ -160,13 +160,13 @@ function getValueTypeName(val: NativePointer) {
 
 // get C string from XPC string
 function getXPCString(val: NativePointer) {
-    var content = xpc_string_get_string_ptr(val);
+    let content = xpc_string_get_string_ptr(val);
     return rcstr(content)
 }
 
 // get human-readable date from Unix timestamp
 function getXPCDate(val: NativePointer) {
-    var nanoseconds = xpc_date_get_value(val);
+    let nanoseconds = xpc_date_get_value(val);
 
     // Convert nanoseconds to milliseconds
     const timestampInMilliseconds = nanoseconds / 1000000;
@@ -186,15 +186,15 @@ function getXPCData(conn: NativePointer, dict: any, buff: NativePointer, n: any)
         const plist = CFBinaryPlistCreate15(buff, n, NULL);
         return new ObjC.Object(plist).description().toString();
     } else if (hdr == "bplist16") {
-        var ObjCData = NSData.dataWithBytes_length_(buff, n);
-        var base64Encoded = ObjCData.base64EncodedStringWithOptions_(0).toString();
+        let ObjCData = NSData.dataWithBytes_length_(buff, n);
+        let base64Encoded = ObjCData.base64EncodedStringWithOptions_(0).toString();
 
         send(JSON.stringify({
             "type": "jlutil",
             "payload": base64Encoded,
         }));
 
-        var resp;
+        let resp;
         recv("jlutil", (message, _) => {
             resp = message.payload;
         })
@@ -215,28 +215,28 @@ function getXPCData(conn: NativePointer, dict: any, buff: NativePointer, n: any)
     } else if (hdr == "bplist00") {
         const format = Memory.alloc(8);
         format.writeU64(0xaaaaaaaa);
-        var ObjCData = NSData.dataWithBytes_length_(buff, n);
+        let ObjCData = NSData.dataWithBytes_length_(buff, n);
         const plist = NSPropertyListSerialization.propertyListWithData_options_format_error_(ObjCData, 0, format, NULL);
         return new ObjC.Object(plist).description().toString();
     }
 
-    var ObjCData = NSData.dataWithBytes_length_(buff, n);
-    var base64Encoded = ObjCData.base64EncodedStringWithOptions_(0).toString();
+    let ObjCData = NSData.dataWithBytes_length_(buff, n);
+    let base64Encoded = ObjCData.base64EncodedStringWithOptions_(0).toString();
     return base64Encoded;
 }
 
 function getKeys(description: any) {
     const rex = /(.*?)"\s=>\s/g;
     let matches = (description.match(rex) || []).map((e: string) => e.replace(rex, '$1'));
-    var realMatches = [];
-    var first = true;
-    var depth = 0;
-    for (var i in matches) {
+    let realMatches = [];
+    let first = true;
+    let depth = 0;
+    for (let i in matches) {
         if (first) {
             depth = (matches[i].match(/\t/g) || []).length;
             first = false;
         }
-        var elemDepth = (matches[i].match(/\t/g) || []).length;
+        let elemDepth = (matches[i].match(/\t/g) || []).length;
         if (elemDepth == depth) {
             realMatches.push(matches[i].slice(2));
         }
@@ -246,21 +246,21 @@ function getKeys(description: any) {
 
 // https://github.com/nst/iOS-Runtime-Headers/blob/master/Frameworks/Foundation.framework/NSXPCDecoder.h
 function parseBPList(conn: NativePointer, dict: NativePointer) {
-    var decoder = NSXPCDecoder.alloc().init();
+    let decoder = NSXPCDecoder.alloc().init();
     try {
         decoder["- _setConnection:"](conn);
     } catch (err) {
         decoder["- set_connection:"](conn);
     }
     decoder["- _startReadingFromXPCObject:"](dict);
-    var debugDescription = decoder.debugDescription();
+    let debugDescription = decoder.debugDescription();
     decoder.dealloc();
     return debugDescription.toString();
 }
 
 function extract(conn: NativePointer, xpc_object: NativePointer, dict: any): any {
-    var ret: any = {};
-    var xpc_object_type = getValueTypeName(xpc_object);
+    let ret: any = {};
+    let xpc_object_type = getValueTypeName(xpc_object);
     switch (xpc_object_type) {
         case "dictionary":
             ret = {};
@@ -280,13 +280,13 @@ function extract(conn: NativePointer, xpc_object: NativePointer, dict: any): any
         case "string":
             return getXPCString(xpc_object);
         case "data":
-            var dataLen = xpc_data_get_length(xpc_object);
+            let dataLen = xpc_data_get_length(xpc_object);
             if (dataLen > 0) {
-                var buff = Memory.alloc(Process.pointerSize * dataLen);
-                var n = xpc_data_get_bytes(xpc_object, buff, 0, dataLen);
+                let buff = Memory.alloc(Process.pointerSize * dataLen);
+                let n = xpc_data_get_bytes(xpc_object, buff, 0, dataLen);
                 return getXPCData(conn, dict, buff, n);
             } else {
-                var empty = new Uint8Array();
+                let empty = new Uint8Array();
                 return empty;
             }
         case "uint64":
@@ -297,10 +297,10 @@ function extract(conn: NativePointer, xpc_object: NativePointer, dict: any): any
             return getXPCDate(xpc_object);
         case "array":
             ret = [];
-            var count = xpc_array_get_count(xpc_object);
-            for (var j = 0; j < count; j++) {
-                var elem = xpc_array_get_value(xpc_object, j);
-                var el = extract(conn, elem, null);
+            let count = xpc_array_get_count(xpc_object);
+            for (let j = 0; j < count; j++) {
+                let elem = xpc_array_get_value(xpc_object, j);
+                let el = extract(conn, elem, null);
                 ret.push(el);
             }
             return ret;
@@ -311,20 +311,20 @@ function extract(conn: NativePointer, xpc_object: NativePointer, dict: any): any
     }
 }
 
-var ps = new NativeCallback((fnName, conn, dict) => {
-    var ret: any = {};
-    var fname: string = rcstr(fnName);
+let ps = new NativeCallback((fnName, conn, dict) => {
+    let ret: any = {};
+    let fname: string = rcstr(fnName);
     ret["name"] = fname;
     ret["connName"] = "UNKNOWN";
     ret["pid"] = xpc_connection_get_pid(conn);
     if (conn != null) {
-        var connName = xpc_connection_get_name(conn);
+        let connName = xpc_connection_get_name(conn);
         if (! connName.isNull()) {
             ret["connName"] = rcstr(connName);
         }
     }
     if (fname == "xpc_connection_set_event_handler") {
-        var data = {"blockImplementation": dict.toString()};
+        let data = {"blockImplementation": dict.toString()};
         ret["dictionary"] = data;
     } else {
         ret["dictionary"] = extract(conn, dict, dict);
@@ -332,7 +332,7 @@ var ps = new NativeCallback((fnName, conn, dict) => {
     send(JSON.stringify({"type": "print", "payload": ret}));
 }, "void", ["pointer", "pointer", "pointer"]);
 
-var cm_notification = new CModule(`
+let cm_notification = new CModule(`
     #include <gum/guminterceptor.h>
     extern void ps(void*,void*,void*);
     
@@ -344,7 +344,7 @@ var cm_notification = new CModule(`
     }
 `, {ps});
 
-var cm_send_message = new CModule(`
+let cm_send_message = new CModule(`
     #include <gum/guminterceptor.h>
     extern void ps(void*,void*,void*);
     
@@ -356,7 +356,7 @@ var cm_send_message = new CModule(`
     }
 `, {ps});
 
-var cm_send_message_with_reply = new CModule(`
+let cm_send_message_with_reply = new CModule(`
     #include <gum/guminterceptor.h>
     extern void ps(void*,void*,void*);
     
@@ -368,7 +368,7 @@ var cm_send_message_with_reply = new CModule(`
     }
 `, {ps});
 
-var cm_send_message_with_reply_sync = new CModule(`
+let cm_send_message_with_reply_sync = new CModule(`
     #include <gum/guminterceptor.h>
     extern void ps(void*,void*,void*);
     
@@ -380,7 +380,7 @@ var cm_send_message_with_reply_sync = new CModule(`
     }
 `, {ps});
 
-var cm_call_event_handler = new CModule(`
+let cm_call_event_handler = new CModule(`
     #include <gum/guminterceptor.h>
     extern void ps(void*,void*,void*);
     
@@ -392,10 +392,10 @@ var cm_call_event_handler = new CModule(`
     }
 `, {ps});
 
-var psize = Memory.alloc(Process.pointerSize);
+let psize = Memory.alloc(Process.pointerSize);
 psize.writeInt(Process.pointerSize * 2);
 
-var cm_set_event_handler = new CModule(`
+let cm_set_event_handler = new CModule(`
     #include <gum/guminterceptor.h>
     extern int pointerSize;
     extern void ps(void*,void*,void*);
@@ -439,7 +439,7 @@ function sysctl(name: string) {
     return value.readCString();
 }
 
-var timerID = setInterval(function() {
+let timerID = setInterval(function() {
     if (__CFBinaryPlistCreate15 != null && _xpc_connection_call_event_handler != null) {
         CFBinaryPlistCreate15 = new NativeFunction(__CFBinaryPlistCreate15, "pointer", ["pointer", "int", "pointer"]);
         xpc_connection_call_event_handler = new NativeFunction(_xpc_connection_call_event_handler, "void", ["pointer", "pointer"]);
@@ -459,13 +459,13 @@ rpc.exports = {
         const osversion = sysctl("kern.osversion");
 
 
-        var found = false;
+        let found = false;
 
         if (offsets != null) {
-            for (var i = 0; i < offsets.offsets.length; i++) {
-                var os = offsets.offsets[i].os;
+            for (let i = 0; i < offsets.offsets.length; i++) {
+                let os = offsets.offsets[i].os;
                 if (os == machine) {
-                    for (var j = 0; j < offsets.offsets[i].builds.length; j++) {
+                    for (let j = 0; j < offsets.offsets[i].builds.length; j++) {
                         let buildData = offsets.offsets[i].builds[j];
                         let build = Object.keys(buildData)[0];
                         if (build == osversion) {
