@@ -206,9 +206,6 @@ var rootCmd = &cobra.Command{
 
 		os.MkdirAll(tempDir, os.ModePerm)
 
-		// save current directory because we might change it to compile the script
-		currentDir, _ := os.Getwd()
-
 		if _, err = os.Stat(filepath.Join(tempDir, "script.ts")); os.IsNotExist(err) {
 			for fl, data := range tempFiles {
 				os.WriteFile(filepath.Join(tempDir, fl), data, os.ModePerm)
@@ -217,10 +214,13 @@ var rootCmd = &cobra.Command{
 
 		if _, err = os.Stat(filepath.Join(tempDir, "node_modules")); os.IsNotExist(err) {
 			// Install modules
+			pwd, _ := os.Getwd()
+			os.Chdir(tempDir)
 			command := exec.Command("npm", "install")
 			if err := command.Run(); err != nil {
 				logger.Errorf("Error installing modules: %v", err)
 			}
+			os.Chdir(pwd)
 		}
 
 		agentPath := filepath.Join(tempDir, agentFilename)
@@ -228,15 +228,22 @@ var rootCmd = &cobra.Command{
 
 		// check if we have script.ts already compiled
 		if _, err = os.Stat(agentPath); os.IsNotExist(err) {
-			os.Chdir(tempDir)
-
 			comp := frida.NewCompiler()
 
 			comp.On("finished", func() {
 				logger.Infof("Done compiling script")
 			})
 
-			bundle, err := comp.Build("script.ts")
+			comp.On("diagnostics", func(diag string) {
+				logger.Errorf("compilation error: %v", diag)
+			})
+
+			buildOptions := frida.NewCompilerOptions()
+			buildOptions.SetProjectRoot(tempDir)
+			buildOptions.SetJSCompression(frida.JSCompressionTerser)
+			buildOptions.SetSourceMaps(frida.SourceMapsOmitted)
+
+			bundle, err := comp.Build("script.ts", buildOptions)
 			if err != nil {
 				return fmt.Errorf("error compiling script: %v", err)
 			}
@@ -246,8 +253,6 @@ var rootCmd = &cobra.Command{
 			}
 
 			scriptBody = bundle
-
-			os.Chdir(currentDir)
 		} else {
 			data, err := os.ReadFile(agentPath)
 			if err != nil {
