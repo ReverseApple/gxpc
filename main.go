@@ -152,17 +152,17 @@ var rootCmd = &cobra.Command{
 			return err
 		}
 
-		if spawnGate != "" {
-			if err := dev.EnableSpawnGating(); err != nil {
-				return err
-			}
-			logger.Infof("Enable spawn gating")
-		} else {
-			if err := dev.DisableSpawnGating(); err != nil {
-				return err
-			}
-			logger.Infof("Disable spawn gating")
-		}
+		// if spawnGate != "" {
+		// 	if err := dev.EnableSpawnGating(); err != nil {
+		// 		return err
+		// 	}
+		// 	logger.Infof("Enable spawn gating")
+		// } else {
+		// 	if err := dev.DisableSpawnGating(); err != nil {
+		// 		return err
+		// 	}
+		// 	logger.Infof("Disable spawn gating")
+		// }
 
 		procPid := pid
 
@@ -195,7 +195,7 @@ var rootCmd = &cobra.Command{
 			lock := sync.Mutex{}
 			lock.Lock()
 
-			dev.On("spawn_added", func(spawn *frida.Spawn) {
+			dev.On("spawn-added", func(spawn *frida.Spawn) {
 				logger.Infof("%d", spawn.PID())
 				if spawn.Identifier() == spawnGate {
 					procPid = spawn.PID()
