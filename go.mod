@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/fatih/color v1.18.0
-	github.com/frida/frida-go v0.12.1
+	github.com/frida/frida-go v0.13.0
 	github.com/spf13/cobra v1.9.1
 )
 
