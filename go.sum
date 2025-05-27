@@ -5,6 +5,8 @@ github.com/frida/frida-go v0.12.1 h1:dHOdJU3wuQkvlb7Lan0RFSm0lpCJH6cW8IbYOxt9C0E
 github.com/frida/frida-go v0.12.1/go.mod h1:OyRIp58wuTcGggI6ztakXcHkTXrt5WfD9yi3pq6QyGw=
 github.com/frida/frida-go v0.13.0 h1:ocEnnj3+87EXrxRXaFPCCT/WxoDvwFW+wPEFx6IfEEQ=
 github.com/frida/frida-go v0.13.0/go.mod h1:O8Dg1YBGfQsBEL1a8x3GURw/JllJrcuvg78ga2OgdM4=
+github.com/frida/frida-go v0.13.1 h1:RN097XqOvKAb3wnYocSJzCC+KMvc6Ks8ePbIrReu00w=
+github.com/frida/frida-go v0.13.1/go.mod h1:O8Dg1YBGfQsBEL1a8x3GURw/JllJrcuvg78ga2OgdM4=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
