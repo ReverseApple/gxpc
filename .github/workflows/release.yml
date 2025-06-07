@@ -8,7 +8,7 @@ jobs:
   release:
     strategy:
       matrix:
-        frida_version: ["17.0.5"]
+        frida_version: ["17.1.3"]
     runs-on: macos-latest
     steps:
       -
