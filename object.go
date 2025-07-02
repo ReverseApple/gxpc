@@ -84,7 +84,7 @@ func PrintData(value any, decode, printHex bool,
 	logger.Scriptf("Connection Name: %s", data["connName"])
 	pid, ok := data["pid"].(float64)
 	if ok {
-		logger.Scriptf("PID: %d", int(pid))
+		logger.Scriptf("Process: %s[%d]", data["procName"], int(pid))
 	}
 	logger.Scriptf("Data:")
 	logger.Scriptf("%s", message)

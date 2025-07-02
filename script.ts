@@ -21,6 +21,9 @@ const xpc_connection_set_event_handler = libxpc_dylib.getExportByName("xpc_conne
 const sysctlbyname_addr = Module.getGlobalExportByName('sysctlbyname');
 const sysctlbyname = new NativeFunction(sysctlbyname_addr, 'int', ['pointer', 'pointer', 'pointer', 'pointer', 'int']);
 
+const proc_name_addr = Module.getGlobalExportByName('proc_name');
+const proc_name = new NativeFunction(proc_name_addr, 'void', ['uint32', 'pointer', 'uint32']);
+
 let __CFBinaryPlistCreate15: NativePointer;
 let _xpc_connection_call_event_handler: NativePointer;
 let CFBinaryPlistCreate15: NativeFunction<any, any>;
@@ -316,7 +319,13 @@ let ps = new NativeCallback((fnName, conn, dict) => {
     let fname: string = rcstr(fnName);
     ret["name"] = fname;
     ret["connName"] = "UNKNOWN";
-    ret["pid"] = xpc_connection_get_pid(conn);
+    let pid = parseInt(xpc_connection_get_pid(conn));
+    ret["pid"] = pid;
+    let mem = Memory.alloc(0x100);
+    proc_name(pid, mem, 0x100);
+    let name = mem.readCString();
+    ret["procName"] = name;
+    
     if (conn != null) {
         let connName = xpc_connection_get_name(conn);
         if (! connName.isNull()) {
