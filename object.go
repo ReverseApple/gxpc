@@ -66,24 +66,29 @@ func PrintData(value any, decode, printHex bool,
 	var message string
 	fnName := fmt.Sprintf("%d) Name: %s\n", msg, data["name"])
 	connName := fmt.Sprintf("Connection Name: %s\n", data["connName"])
+	process := ""
+	pid, pidOK := data["pid"].(float64)
+	if pidOK {
+		process = fmt.Sprintf("Process: %s[%d]\n", data["procName"], int(pid))
+	}
 	if _, ok := data["dictionary"]; ok {
 		printData(reflect.ValueOf(data["dictionary"]), "", "", &message)
 	}
-	total := len(fnName) + len(connName) + len(message) + 100
+	total := len(fnName) + len(connName) + len(process) + len(message) + 100
 
 	builder := strings.Builder{}
 	builder.Grow(total)
 
 	builder.WriteString(fnName)
 	builder.WriteString(connName)
+	builder.WriteString(process)
 	builder.WriteString("Data:\n")
 	builder.WriteString(message)
 	builder.WriteString(fmt.Sprintf("\n%s\n", strings.Repeat("=", 80)))
 
 	logger.Scriptf("%d) Name: %s", msg, data["name"])
 	logger.Scriptf("Connection Name: %s", data["connName"])
-	pid, ok := data["pid"].(float64)
-	if ok {
+	if pidOK {
 		logger.Scriptf("Process: %s[%d]", data["procName"], int(pid))
 	}
 	logger.Scriptf("Data:")
